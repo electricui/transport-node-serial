@@ -1,17 +1,32 @@
 import {
-  TYPE_CALLBACK,
-  TYPE_QUERY,
+  EVENT_DEVICE_AVAILABILITY_HINT,
+  EVENT_DEVICE_DISCONNECTED,
+  EVENT_DEVICE_UNAVAILABILITY_HINT,
   MESSAGEID_SEARCH,
   POLLING_DISCOVERY,
-  EVENT_DEVICE_AVAILABILITY_HINT,
-  EVENT_DEVICE_UNAVAILABILITY_HINT,
-  EVENT_DEVICE_DISCONNECTED
+  TYPE_CALLBACK,
+  TYPE_QUERY,
 } from '@electricui/protocol-constants'
 
 import { PassThrough } from 'stream'
+import promiseFinally from 'promise.prototype.finally'
 
 const debug = require('debug')('electricui-transport-node-serial:discovery')
 const debugHints = require('debug')('electricui-transport-node-serial:hints')
+
+// override Promise with the ability to have 'finally'
+promiseFinally.shim() // will be a no-op if not needed
+
+const SEARCH_TIMEOUT = 5000
+
+function timeout(ms) {
+  return new Promise(function(resolve, reject) {
+    // Set up the timeout
+    setTimeout(function() {
+      reject('Promise timed out after ' + ms + ' ms')
+    }, ms)
+  })
+}
 
 class SerialDiscovery {
   constructor(opts) {
@@ -52,7 +67,7 @@ class SerialDiscovery {
     generateTransportHash,
     isConnected,
     setConnected,
-    hint
+    hint,
   ) => {
     debugHints(`Validating the unavailability hint ${hint}`)
 
@@ -61,7 +76,7 @@ class SerialDiscovery {
 
       const transportHash = generateTransportHash(
         this.transportKey,
-        connectionOptions
+        connectionOptions,
       )
 
       if (
@@ -76,8 +91,8 @@ class SerialDiscovery {
           transportKey: this.transportKey,
           transportHash: transportHash,
           payload: {
-            graceful: false
-          }
+            graceful: false,
+          },
         })
 
         // explicitly validate that we can connect back to it (this should fail)
@@ -89,12 +104,47 @@ class SerialDiscovery {
             hint: {
               comPath: obj.comPath,
               vendorID: obj.vendorID,
-              productID: obj.productID
-            }
-          }
+              productID: obj.productID,
+            },
+          },
         })
       }
     }
+  }
+
+  findPortWithIDs = (productID, vendorID) => {
+    if (!hint.productID || !hint.vendorID) {
+      return
+    }
+
+    // list all serial ports
+    return this.SerialPort.list()
+      .then(ports => {
+        // filter devices by ports with the same product and vendor IDs
+        const devices = ports.filter(
+          port =>
+            hint.productID === parseInt(port.productId, 16) &&
+            hint.vendorID === parseInt(port.vendorId, 16),
+        )
+
+        for (const device of devices) {
+          hint.comPath = device.comName
+
+          debugHints(`Going to attempt ${hint.comPath}`)
+
+          this.validateAvailabilityHint(
+            callback,
+            generateTransportHash,
+            isConnected,
+            setConnected,
+            hint,
+          )
+        }
+      })
+      .catch(err => {
+        debug(err.message)
+        return null
+      })
   }
 
   validateAvailabilityHint = async (
@@ -102,7 +152,7 @@ class SerialDiscovery {
     generateTransportHash,
     isConnected,
     setConnected,
-    hint
+    hint,
   ) => {
     const connectionOptions = {}
 
@@ -116,40 +166,10 @@ class SerialDiscovery {
       debugHints(
         `Got a usb hint, vendorID: ${hint.vendorID} productID: ${
           hint.productID
-        }`
+        }`,
       )
 
-      if (!hint.vendorID || !hint.productID) {
-        return
-      }
-
-      // this is a promise chain that we're awaiting, it's a bit messy
-      await this.SerialPort.list()
-        .then(ports => {
-          const devices = ports.filter(
-            port =>
-              hint.productID === parseInt(port.productId, 16) &&
-              hint.vendorID === parseInt(port.vendorId, 16)
-          )
-
-          for (const device of devices) {
-            hint.comPath = device.comName
-
-            debugHints(`Going to attempt ${hint.comPath}`)
-
-            this.validateAvailabilityHint(
-              callback,
-              generateTransportHash,
-              isConnected,
-              setConnected,
-              hint
-            )
-          }
-        })
-        .catch(err => {
-          debug(err.message)
-          return null
-        })
+      await this.findPortWithIDs(hint.vendorID, hint.productID)
 
       // bail since we would have recursively called this function
       // with the comPath above
@@ -160,7 +180,7 @@ class SerialDiscovery {
 
     const transportHash = generateTransportHash(
       this.transportKey,
-      connectionOptions
+      connectionOptions,
     )
 
     // make sure we're not already connected
@@ -172,136 +192,142 @@ class SerialDiscovery {
 
     debugHints(`Building factory`)
 
-    try {
-      // we then generate a transport instance based on the merged configuration and dynamic options (eg the comPath / URI / filePath)
-      const { transport, readInterface, writeInterface } = this.factory(
-        Object.assign({}, this.configuration, connectionOptions)
-      )
+    const { transport, readInterface, writeInterface } = this.factory(
+      Object.assign({}, this.configuration, connectionOptions),
+    )
 
-      // use the interfaces above to connect and do the needful
-      setConnected(this.transportKey, connectionOptions, true)
+    debugHints(`Connecting...`)
 
-      debugHints(`Connecting...`)
-      await transport.connect()
-      debugHints(`\tConnected.`)
+    // setup subscriptions
+    let cacheInternal = {}
+    let cacheDeveloper = {}
+    let subscriptions = {}
 
-      // waitForReply implementation
-
-      let cacheInternal = {}
-      let cacheDeveloper = {}
-      let subscriptions = {}
-
-      const incomingData = packet => {
-        if (packet.internal) {
-          cacheInternal[packet.messageID] = packet.payload
-        } else {
-          cacheDeveloper[packet.messageID] = packet.payload
-        }
-
-        const cb = subscriptions[packet.messageID]
-
-        if (cb) {
-          cb(packet.payload)
-        }
+    const incomingData = packet => {
+      if (packet.internal) {
+        cacheInternal[packet.messageID] = packet.payload
+      } else {
+        cacheDeveloper[packet.messageID] = packet.payload
       }
 
-      const createWaitForReply = messageID => {
-        return new Promise((res, rej) => {
-          subscriptions[messageID] = res
-        })
+      const cb = subscriptions[packet.messageID]
+
+      if (cb) {
+        cb(packet.payload)
       }
-
-      readInterface.on('data', incomingData)
-
-      debugHints(`Sending a search packet`)
-
-      writeInterface.write({
-        messageID: MESSAGEID_SEARCH,
-        type: TYPE_CALLBACK,
-        internal: true
-      })
-
-      // we should recieve: lv, bi, si in that order
-
-      await createWaitForReply('si')
-
-      debugHints(`Received search sequence response`)
-
-      const { bi, ...restCacheInternal } = cacheInternal
-
-      readInterface.removeListener('data', incomingData)
-      transport.disconnect()
-      setConnected(this.transportKey, connectionOptions, false)
-
-      // get some device information
-      const deviceInformation = {
-        deviceID: bi, // this is always expected
-        internal: {
-          ...restCacheInternal
-        },
-        developer: {
-          // this can be injected if the developer wants
-          ...cacheDeveloper
-        },
-        transportKey: this.transportKey,
-        connectionOptions: connectionOptions
-      }
-
-      debugHints(`Pushing callback`)
-
-      // throw it in our cache so we can do disconnections
-      this.cache[hint.comPath] = {
-        deviceID: bi,
-        connectionOptions: connectionOptions,
-        comPath: hint.comPath,
-        productID: hint.productID,
-        vendorID: hint.vendorID
-      }
-
-      // bubble this method up as a potential connection method
-      callback({
-        transportKey: this.transportKey,
-        connectionOptions,
-        deviceInformation
-      })
-    } catch (e) {
-      debugHints(`Couldn't connect, ${e}`)
     }
+
+    const createWaitForReply = messageID => {
+      return new Promise((res, rej) => {
+        subscriptions[messageID] = res
+      })
+    }
+
+    // connect
+    transport
+      .connect()
+      .then(() => {
+        setConnected(this.transportKey, connectionOptions, true)
+        debugHints(`\tConnected.`)
+      })
+      .then(() => {
+        // attach subscriptions and wait for the search packet
+        readInterface.on('data', incomingData)
+
+        debugHints(`Sending a search packet`)
+
+        writeInterface.write({
+          messageID: MESSAGEID_SEARCH,
+          type: TYPE_CALLBACK,
+          internal: true,
+        })
+
+        // race promises of a timeout and awaiting for the SI message
+        return Promise.race([timeout(SEARCH_TIMEOUT), createWaitForReply('si')])
+      })
+      .then(() => {
+        // received the info we needed
+
+        debugHints(`Received search sequence response`)
+
+        const { bi, ...restCacheInternal } = cacheInternal
+
+        // get some device information
+        const deviceInformation = {
+          deviceID: bi, // this is always expected
+          internal: {
+            ...restCacheInternal,
+          },
+          developer: {
+            // this can be injected if the developer wants
+            ...cacheDeveloper,
+          },
+          transportKey: this.transportKey,
+          connectionOptions: connectionOptions,
+        }
+
+        debugHints(`Pushing callback`)
+
+        // throw it in our cache so we can do disconnections
+        this.cache[hint.comPath] = {
+          deviceID: bi,
+          connectionOptions: connectionOptions,
+          comPath: hint.comPath,
+          productID: hint.productID,
+          vendorID: hint.vendorID,
+        }
+
+        // call our callback with the information we've received
+        callback({
+          transportKey: this.transportKey,
+          connectionOptions,
+          deviceInformation,
+        })
+      })
+      .catch(e => {
+        debugHints(`Couldn't discover ${JSON.stringify(hint)}, received error`)
+        debugHints(e)
+      })
+      .finally(() => {
+        // clean up
+        readInterface.removeListener('data', incomingData)
+        transport.disconnect()
+        setConnected(this.transportKey, connectionOptions, false)
+      })
+  }
+
+  constructPollHints = details => {
+    // the dynamic connection options go here
+
+    if (this.configuration.filter !== undefined) {
+      // run the user provided filter function, if it returns false, bail early
+      if (!this.configuration.filter(details)) {
+        return
+      }
+    }
+
+    debugHints(
+      `Sending hint regarding a device we found at comPath ${details.comName}`,
+    )
+
+    // send an event up to the manager
+    // (even though we can just deal with it here)
+    this.eventInterface.write({
+      type: EVENT_DEVICE_AVAILABILITY_HINT,
+      payload: {
+        transportKey: this.transportKey,
+        detachment: false,
+        hint: {
+          comPath: details.comName,
+          vendorID: parseInt(details.vendorId, 16),
+          productID: parseInt(details.productId, 16),
+        },
+      },
+    })
   }
 
   pollDiscovery() {
     // list every device, get comPaths for the potential candidates
-
-    const constructHints = details => {
-      // the dynamic connection options go here
-
-      if (this.configuration.filter !== undefined) {
-        // run the user provided filter function, if it returns false, bail early
-        if (!this.configuration.filter(details)) {
-          return
-        }
-      }
-
-      debugHints(
-        `Sending hint regarding a device we found at comPath ${details.comName}`
-      )
-
-      // send an event up to the manager
-      // (even though we can just deal with it here)
-      this.eventInterface.write({
-        type: EVENT_DEVICE_AVAILABILITY_HINT,
-        payload: {
-          transportKey: this.transportKey,
-          detachment: false,
-          hint: {
-            comPath: details.comName,
-            vendorID: parseInt(details.vendorId, 16),
-            productID: parseInt(details.productId, 16)
-          }
-        }
-      })
-    }
-
     this.SerialPort.list((err, ports) => {
       if (err) {
         debug(`Error detected ${err}`)
@@ -309,7 +335,7 @@ class SerialDiscovery {
         return
       }
 
-      ports.forEach(constructHints)
+      ports.forEach(this.constructPollHints)
     })
   }
 }

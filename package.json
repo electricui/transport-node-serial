@@ -18,7 +18,8 @@
     "@electricui/protocol-binary": "^0.2.87",
     "@electricui/protocol-constants": "^0.2.87",
     "@electricui/protocol-type-transforms": "^0.2.87",
-    "debug": "^3.1.0"
+    "debug": "^3.1.0",
+    "promise.prototype.finally": "^3.1.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
