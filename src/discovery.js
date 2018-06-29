@@ -243,7 +243,10 @@ class SerialDiscovery {
         })
 
         // race promises of a timeout and awaiting for the SI message
-        return Promise.race([timeout(SEARCH_TIMEOUT), createWaitForReply('si')])
+        // TODO: catch this
+        //return Promise.race([timeout(SEARCH_TIMEOUT), createWaitForReply('si')])
+
+        return createWaitForReply('si')
       })
       .then(() => {
         // received the info we needed
