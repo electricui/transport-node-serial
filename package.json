@@ -1,6 +1,6 @@
 {
   "name": "@electricui/transport-node-serial",
-  "version": "0.2.113",
+  "version": "0.2.114",
   "description": "ElectricUI Serial Transport for Desktop",
   "electricui-dev": true,
   "repository": "https://Mike-Dax@github.com/Scottapotamas/electricui-interface.git",
