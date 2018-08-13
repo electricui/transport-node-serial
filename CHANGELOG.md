@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="0.3.0"></a>
+# [0.3.0](https://github.com/Scottapotamas/electricui-interface/compare/v0.2.118...v0.3.0) (2018-08-13)
+
+
+
+
+**Note:** Version bump only for package @electricui/transport-node-serial
+
 <a name="0.2.114"></a>
 ## [0.2.114](https://github.com/Scottapotamas/electricui-interface/compare/v0.2.113...v0.2.114) (2018-07-25)
 
