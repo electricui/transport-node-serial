@@ -112,10 +112,12 @@ class SerialDiscovery {
     }
   }
 
-  findPortWithIDs = (productID, vendorID) => {
-    if (!hint.productID || !hint.vendorID) {
-      return
-    }
+  findPortFromHint = hint => {
+    debugHints(
+      `Trying to find a device with productID: ${hint.productID}, vendorID: ${
+        hint.vendorID
+      }`,
+    )
 
     // list all serial ports
     return this.SerialPort.list()
@@ -127,18 +129,22 @@ class SerialDiscovery {
             hint.vendorID === parseInt(port.vendorId, 16),
         )
 
-        for (const device of devices) {
-          hint.comPath = device.comName
-
+        for (const details of devices) {
           debugHints(`Going to attempt ${hint.comPath}`)
+          // bubble it up to the event interface to send back down here.
 
-          this.validateAvailabilityHint(
-            callback,
-            generateTransportHash,
-            isConnected,
-            setConnected,
-            hint,
-          )
+          this.eventInterface.write({
+            type: EVENT_DEVICE_AVAILABILITY_HINT,
+            payload: {
+              transportKey: this.transportKey,
+              detachment: false,
+              hint: {
+                comPath: details.comName,
+                vendorID: parseInt(details.vendorId, 16),
+                productID: parseInt(details.productId, 16),
+              },
+            },
+          })
         }
       })
       .catch(err => {
@@ -169,7 +175,15 @@ class SerialDiscovery {
         }`,
       )
 
-      await this.findPortWithIDs(hint.vendorID, hint.productID)
+      if (!hint.productID || !hint.vendorID) {
+        console.error(
+          'Received a node-serial hint without a productID or vendorID',
+          hint,
+        )
+        return
+      }
+
+      await this.findPortFromHint(hint)
 
       // bail since we would have recursively called this function
       // with the comPath above
