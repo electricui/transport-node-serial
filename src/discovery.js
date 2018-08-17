@@ -3,7 +3,6 @@ import {
   EVENT_DEVICE_DISCONNECTED,
   EVENT_DEVICE_UNAVAILABILITY_HINT,
   MESSAGEID_SEARCH,
-  POLLING_DISCOVERY,
   TYPE_CALLBACK,
   TYPE_QUERY,
 } from '@electricui/protocol-constants'
@@ -45,10 +44,11 @@ class SerialDiscovery {
 
     this.factory = factory
     this.SerialPort = configuration.SerialPort
-    this.type = POLLING_DISCOVERY
+
     this.transportKey = 'serial'
     this.canAcceptConnectionHints = true
     this.canAcceptDisconnectionHints = true
+    this.canPoll = true
 
     this.eventInterface = new PassThrough({ objectMode: true })
 
@@ -158,6 +158,7 @@ class SerialDiscovery {
     generateTransportHash,
     isConnected,
     setConnected,
+    ephemeralConnectionHinter,
     hint,
   ) => {
     const connectionOptions = {}
@@ -261,6 +262,9 @@ class SerialDiscovery {
         //return Promise.race([timeout(SEARCH_TIMEOUT), createWaitForReply('si')])
 
         return createWaitForReply('si')
+      })
+      .then(() => {
+        return ephemeralConnectionHinter(readInterface, writeInterface)
       })
       .then(() => {
         // received the info we needed
