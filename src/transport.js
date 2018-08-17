@@ -1,4 +1,5 @@
 import { EVENT_DEVICE_DISCONNECTED } from '@electricui/protocol-constants'
+import { PassThrough } from 'stream'
 
 class SerialTransport {
   constructor(options = {}) {
@@ -32,13 +33,16 @@ class SerialTransport {
 
     const SerialPort = options.SerialPort
 
-    this.interface = new SerialPort(this.comPath, this.options)
+    this.serialPort = new SerialPort(this.comPath, this.options)
     this.eventInterface = options.eventInterface
+
+    this.readInterface = new PassThrough({ objectMode: false })
+    this.writeInterface = new PassThrough({ objectMode: false })
   }
 
   connect = () => {
     return new Promise((resolve, reject) => {
-      this.interface.open(err => {
+      this.serialPort.open(err => {
         if (err) {
           reject(err)
         } // else {
@@ -46,26 +50,31 @@ class SerialTransport {
         //}
       })
 
-      this.interface.once('close', err => {
+      this.serialPort.once('close', err => {
         // send a disconnection event if it disconnects
         this.eventInterface.write({
           type: EVENT_DEVICE_DISCONNECTED,
           payload: {
-            graceful: !(err && err.disconnected)
-          }
+            graceful: !(err && err.disconnected),
+          },
         })
       })
 
       // any advantage in the above way to do this?
-      this.interface.once('open', () => {
+      this.serialPort.once('open', () => {
+        this.serialPort.pipe(this.readInterface)
+        this.writeInterface.pipe(this.serialPort)
         resolve()
       })
     })
   }
 
   disconnect = () => {
-    if (this.interface.isOpen) {
-      return this.interface.close()
+    this.serialPort.unpipe(this.readInterface)
+    this.writeInterface.unpipe(this.serialPort)
+
+    if (this.serialPort.isOpen) {
+      return this.serialPort.close()
     }
     return Promise.resolve()
   }
