@@ -130,7 +130,7 @@ class SerialDiscovery {
         )
 
         for (const details of devices) {
-          debugHints(`Going to attempt ${hint.comPath}`)
+          debugHints(`Going to attempt ${hint.comName}`)
           // bubble it up to the event interface to send back down here.
 
           this.eventInterface.write({

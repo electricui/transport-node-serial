@@ -70,8 +70,8 @@ class SerialTransport {
   }
 
   disconnect = () => {
-    this.serialPort.unpipe(this.readInterface)
-    this.writeInterface.unpipe(this.serialPort)
+    if (this.serialPort) this.serialPort.unpipe(this.readInterface)
+    if (this.writeInterface) this.writeInterface.unpipe(this.serialPort)
 
     if (this.serialPort.isOpen) {
       return this.serialPort.close()
