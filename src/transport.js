@@ -40,38 +40,52 @@ class SerialTransport {
     this.writeInterface = new PassThrough({ objectMode: false })
   }
 
+  closeConnectionWithError = err => {
+    // send a disconnection event if it disconnects, if the eventInterface is still writable
+
+    if (this.eventInterface.writable) {
+      this.eventInterface.write({
+        type: EVENT_DEVICE_DISCONNECTED,
+        payload: {
+          graceful: !(err && err.disconnected),
+        },
+      })
+    }
+
+    this.disconnect()
+  }
+
+  onError = err => {
+    this.closeConnectionWithError(err)
+  }
+
   connect = () => {
     return new Promise((resolve, reject) => {
       this.serialPort.open(err => {
         if (err) {
           reject(err)
-        } // else {
-        //  resolve()
-        //}
-      })
+          return
+        }
 
-      this.serialPort.once('close', err => {
-        // send a disconnection event if it disconnects
-        this.eventInterface.write({
-          type: EVENT_DEVICE_DISCONNECTED,
-          payload: {
-            graceful: !(err && err.disconnected),
-          },
-        })
-      })
-
-      // any advantage in the above way to do this?
-      this.serialPort.once('open', () => {
         this.serialPort.pipe(this.readInterface)
         this.writeInterface.pipe(this.serialPort)
         resolve()
       })
+
+      this.serialPort.once('close', this.closeConnectionWithError)
+      this.serialPort.on('error', this.onError)
     })
   }
 
   disconnect = () => {
-    if (this.serialPort) this.serialPort.unpipe(this.readInterface)
-    if (this.writeInterface) this.writeInterface.unpipe(this.serialPort)
+    if (this.serialPort) {
+      this.serialPort.unpipe(this.readInterface)
+      this.serialPort.removeListener('error', this.onError)
+    }
+
+    if (this.writeInterface) {
+      this.writeInterface.unpipe(this.serialPort)
+    }
 
     if (this.serialPort.isOpen) {
       return this.serialPort.close()
