@@ -264,12 +264,16 @@ class SerialDiscovery {
         return createWaitForReply('si')
       })
       .then(() => {
+        debugHints(`Received search sequence response`)
+
+        debugHints(`Running ephemeral connection hinters if they exist`)
+
         return ephemeralConnectionHinter(readInterface, writeInterface)
       })
       .then(() => {
         // received the info we needed
 
-        debugHints(`Received search sequence response`)
+        debugHints(`...connection hinters run, packaging data`)
 
         const { bi, ...restCacheInternal } = cacheInternal
 
