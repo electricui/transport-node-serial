@@ -19,7 +19,7 @@
     "@electricui/protocol-constants": "^0.3.7",
     "@electricui/protocol-type-transforms": "^0.3.7",
     "debug": "^3.1.0",
-    "promise.prototype.finally": "^3.1.0"
+    "bluebird": "^3.5.1"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",

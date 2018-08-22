@@ -1,3 +1,5 @@
+import 'bluebird'
+
 import {
   EVENT_DEVICE_AVAILABILITY_HINT,
   EVENT_DEVICE_DISCONNECTED,
@@ -8,13 +10,9 @@ import {
 } from '@electricui/protocol-constants'
 
 import { PassThrough } from 'stream'
-import promiseFinally from 'promise.prototype.finally'
 
 const debug = require('debug')('electricui-transport-node-serial:discovery')
 const debugHints = require('debug')('electricui-transport-node-serial:hints')
-
-// override Promise with the ability to have 'finally'
-promiseFinally.shim() // will be a no-op if not needed
 
 const SEARCH_TIMEOUT = 5000
 
