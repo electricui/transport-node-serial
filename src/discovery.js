@@ -271,7 +271,11 @@ class SerialDiscovery {
       .then(() => {
         // received the info we needed
 
-        debugHints(`...connection hinters run, packaging data`)
+        debugHints(
+          `...connection hinters run, packaging data`,
+          cacheInternal,
+          cacheDeveloper,
+        )
 
         const { bi, ...restCacheInternal } = cacheInternal
 
