@@ -279,9 +279,11 @@ class SerialDiscovery {
 
         const { bi, ...restCacheInternal } = cacheInternal
 
+        const deviceID = String(bi)
+
         // get some device information
         const deviceInformation = {
-          deviceID: bi, // this is always expected
+          deviceID, // this is always expected
           internal: {
             ...restCacheInternal,
           },
@@ -297,7 +299,7 @@ class SerialDiscovery {
 
         // throw it in our cache so we can do disconnections
         this.cache[hint.comPath] = {
-          deviceID: bi,
+          deviceID,
           connectionOptions: connectionOptions,
           comPath: hint.comPath,
           productID: hint.productID,
