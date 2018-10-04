@@ -4,7 +4,7 @@ import { Sink, Transport } from '@electricui/core'
 
 import { SerialPort } from './serialport-types'
 
-interface ISerialPort {
+export interface ISerialPort {
   new (comPath: string, options: SerialPort.OpenOptions): SerialPort
 }
 
