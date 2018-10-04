@@ -42,7 +42,8 @@ export default class SerialTransport extends Transport {
     this.writePipeline = new SerialWriteSink(this.writeToDevice)
 
     this.receiveData = this.receiveData.bind(this)
-    this.onError = this.onError.bind(this)
+    this.error = this.error.bind(this)
+    this.close = this.close.bind(this)
 
     this.serialPort = new SerialPortClass(comPath, {
       ...rest,
@@ -50,12 +51,17 @@ export default class SerialTransport extends Transport {
       lock: false,
     })
 
-    this.serialPort.on('error', this.onError)
+    this.serialPort.on('error', this.error)
     this.serialPort.on('data', this.receiveData)
+    this.serialPort.on('close', this.close)
   }
 
-  onError(err: Error) {
-    console.error(err)
+  error(err: Error) {
+    this.onError(err)
+  }
+
+  close(err: Error) {
+    this.onClose(err)
   }
 
   receiveData(chunk: any) {
