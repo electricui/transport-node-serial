@@ -2,9 +2,20 @@
 // Project: https://github.com/EmergingTechnologyAdvisors/node-serialport
 // Definitions by: Jeremy Foster <https://github.com/codefoster>
 //                 Andrew Pearson <https://github.com/apearson>
+//                 Michael Orenstein <https://github.com/Mike-Dax>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 /// <reference types="node" />
 import * as Stream from 'stream'
+
+export declare class PortInformation {
+  comName: string
+  manufacturer: any
+  serialNumber: any
+  pnpId: any
+  locationId: any
+  vendorId: any
+  productId: any
+}
 
 export declare class SerialPort extends Stream.Duplex {
   constructor(path: string, callback?: SerialPort.ErrorCallback)
@@ -57,9 +68,9 @@ export declare class SerialPort extends Stream.Duplex {
 
   on(event: string, callback: (data?: any) => void): this
 
-  static Binding: SerialPort.BaseBinding
+  Binding: SerialPort.BaseBinding
 
-  static list(): Promise<any>
+  list(): Promise<Array<PortInformation>>
 }
 
 export declare namespace SerialPort {
@@ -190,6 +201,6 @@ export declare namespace SerialPort {
     get(): Promise<any>
     flush(): Promise<any>
     drain(): Promise<any>
-    static list(): Promise<any>
+    static list(): Promise<Array<PortInformation>>
   }
 }
