@@ -2,16 +2,15 @@ import * as Stream from 'stream'
 
 import { Sink, Transport } from '@electricui/core'
 
-import { SerialPort } from './serialport-types'
-
+/*
 export interface ISerialPort {
   new (comPath: string, options: SerialPort.OpenOptions): SerialPort
 }
-
+*/
 export interface SerialTransportOptions {
   comPath: string
   baudRate: number
-  SerialPort: ISerialPort
+  SerialPort: any
   autoOpen?: false
   lock?: false
 }
@@ -30,12 +29,12 @@ class SerialWriteSink extends Sink {
 }
 
 export default class SerialTransport extends Transport {
-  serialPort: SerialPort
+  serialPort: any
 
   constructor(options: SerialTransportOptions) {
     super(options)
 
-    const { SerialPort: SerialPortClass, comPath, ...rest } = options
+    const { SerialPort, comPath, ...rest } = options
 
     this.writeToDevice = this.writeToDevice.bind(this)
 
@@ -45,7 +44,7 @@ export default class SerialTransport extends Transport {
     this.error = this.error.bind(this)
     this.close = this.close.bind(this)
 
-    this.serialPort = new SerialPortClass(comPath, {
+    this.serialPort = new SerialPort(comPath, {
       ...rest,
       autoOpen: false,
       lock: false,
@@ -65,12 +64,13 @@ export default class SerialTransport extends Transport {
   }
 
   receiveData(chunk: any) {
+    console.log('received raw serial data', chunk)
     this.readPipeline.push(chunk)
   }
 
   connect() {
     return new Promise((resolve, reject) => {
-      this.serialPort.open(err => {
+      this.serialPort.open((err: Error) => {
         if (err) {
           reject(err)
           return
@@ -84,7 +84,7 @@ export default class SerialTransport extends Transport {
   disconnect() {
     if (this.serialPort.isOpen) {
       return new Promise((resolve, reject) => {
-        this.serialPort.close(err => {
+        this.serialPort.close((err: Error) => {
           if (err) {
             reject(err)
             return
@@ -98,6 +98,8 @@ export default class SerialTransport extends Transport {
   }
 
   writeToDevice(chunk: any) {
+    console.log('writing raw serial data', chunk)
+
     return new Promise((resolve, reject) => {
       // check if we can continue
       const canContinue = this.serialPort.write(chunk, (err: Error) => {

@@ -1,22 +1,20 @@
 import { DiscoveryHintProducer, Hint } from '@electricui/core'
 
-import { SerialPort } from './serialport-types'
-
 /**
  * The baudrate is optional, as they may use a transformer to add several baudRate options if they wish
  */
 interface SerialPortHintProducerOptions {
   transportKey?: string
-  SerialPort: SerialPort
+  SerialPort: any
   baudRate?: number
 }
 
 export default class SerialPortHintProducer extends DiscoveryHintProducer {
   transportKey: string
-  serialPort: SerialPort
+  serialPort: any // SerialPort
   options: SerialPortHintProducerOptions
   constructor(options: SerialPortHintProducerOptions) {
-    super(options)
+    super()
 
     this.transportKey = options.transportKey || 'serial'
     this.options = options
@@ -27,6 +25,7 @@ export default class SerialPortHintProducer extends DiscoveryHintProducer {
   async poll() {
     this.setPolling(true)
 
+    // TODO: figure out how to do this dependency injection
     const ports = await this.serialPort.list()
 
     if (!this.polling) {

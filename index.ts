@@ -1,4 +1,2 @@
-import SerialDiscovery from './src/discovery'
-import SerialTransport from './src/transport'
-
-export { SerialDiscovery, SerialTransport }
+export { default as SerialPortHintProducer } from './src/hint-producer'
+export { default as SerialTransport } from './src/transport'

@@ -58,11 +58,10 @@ function factory() {
   const spy = sinon.spy()
 
   const deviceManager = new DeviceManager()
-  const discoveryManager = deviceManager.discoveryManager
 
   const producer = new SerialPortHintProducer(options)
 
-  discoveryManager.addHintProducers([producer])
+  deviceManager.addHintProducers([producer])
 
   let callback: () => void
 
@@ -75,7 +74,7 @@ function factory() {
     callback = resolve
   })
 
-  discoveryManager.addHintTransformers([transformer])
+  deviceManager.addHintTransformers([transformer])
 
   return {
     spy,
