@@ -2,6 +2,10 @@ import * as Stream from 'stream'
 
 import { Sink, Transport } from '@electricui/core'
 
+const dTransport = require('debug')(
+  'electricui-transport-node-serial:transport',
+)
+
 /*
 export interface ISerialPort {
   new (comPath: string, options: SerialPort.OpenOptions): SerialPort
@@ -64,7 +68,8 @@ export default class SerialTransport extends Transport {
   }
 
   receiveData(chunk: any) {
-    console.log('received raw serial data', chunk)
+    dTransport('received raw serial data', chunk)
+
     this.readPipeline.push(chunk)
   }
 
@@ -98,7 +103,7 @@ export default class SerialTransport extends Transport {
   }
 
   writeToDevice(chunk: any) {
-    console.log('writing raw serial data', chunk)
+    dTransport('writing raw serial data', chunk)
 
     return new Promise((resolve, reject) => {
       // check if we can continue
