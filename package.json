@@ -23,7 +23,6 @@
   },
   "devDependencies": {
     "@electricui/protocol-binary": "^0.3.18",
-    "@electricui/protocol-type-transforms": "^0.3.18",
     "rollup-plugin-babel": "^3.0.4",
     "serialport": "^7.0.2",
     "@types/chai": "^4.1.6",
