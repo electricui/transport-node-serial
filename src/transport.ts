@@ -1,5 +1,3 @@
-import * as Stream from 'stream'
-
 import { Sink, Transport } from '@electricui/core'
 
 const dTransport = require('debug')(
