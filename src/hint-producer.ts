@@ -42,6 +42,8 @@ export default class SerialPortHintProducer extends DiscoveryHintProducer {
         comPath: port.comName,
         vendorId: port.vendorId,
         productId: port.productId,
+        manufacturer: port.manufacturer,
+        serialNumber: port.serialNumber,
       })
       hint.setConfiguration({
         baudRate: this.options.baudRate,
