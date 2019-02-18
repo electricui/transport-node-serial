@@ -3,7 +3,15 @@ import 'mocha'
 import * as chai from 'chai'
 import * as sinon from 'sinon'
 
-import { Connection, ConnectionInterface, Sink, Source } from '@electricui/core'
+import {
+  Connection,
+  ConnectionInterface,
+  DeliverabilityManagerDumb,
+  DeviceManager,
+  QueryManagerNone,
+  Sink,
+  Source,
+} from '@electricui/core'
 
 import SerialTransport from '../src/transport'
 
@@ -37,7 +45,14 @@ class TestSink extends Sink {
 
 const factory = (options: any) => {
   const connectionInterface = new ConnectionInterface()
-  const connection = new Connection({ connectionInterface })
+
+  const deliverabilityManager = new DeliverabilityManagerDumb(
+    connectionInterface,
+  )
+  connectionInterface.setDeliverabilityManager(deliverabilityManager)
+
+  const queryManager = new QueryManagerNone(connectionInterface)
+  connectionInterface.setQueryManager(queryManager)
 
   const transport = new SerialTransport(options)
   connectionInterface.setTransport(transport)
@@ -50,17 +65,31 @@ const factory = (options: any) => {
 
   const sink = new TestSink(callback)
 
-  transport.readPipeline.pipe(sink)
-
   const writePipeline = <Sink>transport.writePipeline
 
   const source = new Source()
   source.pipe(writePipeline)
 
+  connectionInterface.finalise()
+
+  // Pipe the transports read pipeline into our sink
+  transport.readPipeline.pipe(sink)
+
+  // set up the connection
+  const deviceManager = new DeviceManager()
+
+  const connection = new Connection({
+    connectionInterface,
+    connectionStateUpdateCallback: (connection: Connection) => {},
+    connectionUsageRequestUpdateCallback: (connection: Connection) => {},
+    deviceManager,
+  })
+
   return {
     source,
     transport,
     spy,
+    connection,
   }
 }
 
@@ -74,7 +103,7 @@ describe('Node Serial Transport', () => {
 
     await source.push(chunk)
 
-    const binding = <any>transport.serialPort.binding
+    const binding = transport.serialPort.binding
 
     assert.deepEqual(chunk, binding.lastWrite)
   })
@@ -98,14 +127,17 @@ describe('Node Serial Transport', () => {
 
     await source.push(chunk)
 
-    assert.isTrue(spy.called)
+    assert.isTrue(spy.called, 'Expected the transport to have been written to')
 
     await transport.disconnect()
 
-    assert.isFalse(transport.serialPort.isOpen)
+    assert.isFalse(
+      transport.serialPort.isOpen,
+      'Expected the serialport to be disconnected',
+    )
   })
   it('Pauses the transport when reaching the high watermark and unpauses it after drain', async () => {
-    const { source, transport, spy } = factory(options)
+    const { source, transport, connection } = factory(options)
 
     await transport.connect()
 
@@ -114,13 +146,10 @@ describe('Node Serial Transport', () => {
     await source.push(chunk)
     const writePromise = source.push(chunk)
 
-    const a = <ConnectionInterface>transport.connectionInterface
-    const b = <Connection>a.connection
-
-    assert.isTrue(b.paused)
+    assert.isTrue(connection.paused)
 
     await writePromise
 
-    assert.isFalse(b.paused)
+    assert.isFalse(connection.paused)
   })
 })
