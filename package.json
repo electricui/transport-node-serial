@@ -34,6 +34,7 @@
     "chai": "^4.2.0",
     "chai-subset": "^1.6.0",
     "mocha": "^5.2.0",
+    "mochawesome": "^3.1.1",
     "nyc": "^13.3.0",
     "rollup": "^1.2.0",
     "rollup-plugin-auto-external": "^2.0.0",
@@ -48,7 +49,7 @@
     "prepack": "npm run build && silversmith prepack",
     "build": "rollup -c",
     "postpack": "silversmith postpack",
-    "test": "export TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\"}' && mocha --require ts-node/register \"test/**/*.ts\" && export TS_NODE_COMPILER_OPTIONS=\"\"",
+    "test": "export TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\"}' &&  mocha --require ts-node/register --reporter mochawesome \"test/**/*.ts\" && export TS_NODE_COMPILER_OPTIONS=\"\"",
     "coverage": "export TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\"}' && nyc mocha- -require ts-node/register \"test/**/*.ts\" && export TS_NODE_COMPILER_OPTIONS=\"\""
   }
 }
