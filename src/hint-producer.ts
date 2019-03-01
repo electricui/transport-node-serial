@@ -32,13 +32,11 @@ export default class SerialPortHintProducer extends DiscoveryHintProducer {
     this.setPolling(true)
 
     dHintProducer(`Polling`)
-    console.time('polling_serial_devices')
 
     // TODO: figure out how to do this dependency injection
     const ports = await this.serialPort.list()
 
     dHintProducer(`Finished polling`)
-    console.timeEnd('polling_serial_devices')
 
     if (!this.polling) {
       // if we were cancelled just don't send them up.
