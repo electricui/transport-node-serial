@@ -53,7 +53,7 @@ export default class SerialPortHintProducer extends DiscoveryHintProducer {
       hint.setAvailabilityHint()
 
       hint.setIdentification({
-        comPath: port.comName,
+        comPath: port.path,
         vendorId: port.vendorId,
         productId: port.productId,
         manufacturer: port.manufacturer,
