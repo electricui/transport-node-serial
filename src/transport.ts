@@ -4,11 +4,6 @@ const dTransport = require('debug')(
   'electricui-transport-node-serial:transport',
 )
 
-/*
-export interface ISerialPort {
-  new (comPath: string, options: SerialPort.OpenOptions): SerialPort
-}
-*/
 export interface SerialTransportOptions {
   comPath: string
   baudRate: number
