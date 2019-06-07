@@ -1,6 +1,6 @@
 {
   "name": "@electricui/transport-node-serial",
-  "version": "0.6.0",
+  "version": "0.6.1-prerelease.0",
   "description": "ElectricUI Serial Transport for Desktop",
   "electricui-dev": true,
   "author": "Electric UI <support@electricui.com> (https://electricui.com)",
