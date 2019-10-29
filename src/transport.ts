@@ -27,6 +27,8 @@ class SerialWriteSink extends Sink {
 
 export default class SerialTransport extends Transport {
   serialPort: any
+  inboundByteCounter: number = 0
+  outboundByteCounter: number = 0
 
   constructor(options: SerialTransportOptions) {
     super(options)
@@ -40,6 +42,11 @@ export default class SerialTransport extends Transport {
     this.receiveData = this.receiveData.bind(this)
     this.error = this.error.bind(this)
     this.close = this.close.bind(this)
+    this.resetBandwidthCounters = this.resetBandwidthCounters.bind(this)
+    this.getOutboundBandwidthCounter = this.getOutboundBandwidthCounter.bind(
+      this,
+    )
+    this.getInboundBandwidthCounter = this.getInboundBandwidthCounter.bind(this)
 
     this.serialPort = new SerialPort(comPath, {
       ...rest,
@@ -60,10 +67,25 @@ export default class SerialTransport extends Transport {
     this.onClose(err)
   }
 
-  receiveData(chunk: any) {
+  receiveData(chunk: Buffer) {
     dTransport('received raw serial data', chunk)
 
+    this.inboundByteCounter += chunk.byteLength
+
     this.readPipeline.push(chunk)
+  }
+
+  resetBandwidthCounters() {
+    this.inboundByteCounter = 0
+    this.outboundByteCounter = 0
+  }
+
+  getOutboundBandwidthCounter() {
+    return this.outboundByteCounter
+  }
+
+  getInboundBandwidthCounter() {
+    return this.inboundByteCounter
   }
 
   connect() {
@@ -75,6 +97,8 @@ export default class SerialTransport extends Transport {
         }
 
         resolve()
+
+        this.resetBandwidthCounters()
       })
     })
   }
@@ -88,6 +112,8 @@ export default class SerialTransport extends Transport {
             return
           }
 
+          this.resetBandwidthCounters()
+
           resolve()
         })
       })
@@ -95,7 +121,7 @@ export default class SerialTransport extends Transport {
     return Promise.resolve()
   }
 
-  writeToDevice(chunk: any) {
+  writeToDevice(chunk: Buffer) {
     dTransport('writing raw serial data', chunk)
 
     return new Promise((resolve, reject) => {
@@ -113,6 +139,8 @@ export default class SerialTransport extends Transport {
           reject(err)
           return
         }
+
+        this.outboundByteCounter += chunk.byteLength
 
         resolve()
       })
