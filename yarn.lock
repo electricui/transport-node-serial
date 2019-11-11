@@ -122,10 +122,10 @@
   resolved "https://registry.yarnpkg.com/@serialport/parser-byte-length/-/parser-byte-length-8.0.4.tgz#9be8635fcd0e84ea6355cb13058b000a5a511b9d"
   integrity sha512-5tQQbJZ5KL0eaP750oF1w0iT+E3lFkpDRz/BzONS2jJsGc+Warb+6FH2aWqj1+smz0mAZWdcxNQgJZLrhFy+sw==
 
-"@serialport/parser-cctalk@^3.0.0":
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/@serialport/parser-cctalk/-/parser-cctalk-3.0.0.tgz#2ec1015d62ae30fb039998ef891a6cab9a8e822d"
-  integrity sha512-gDUpIqgJ0M5LjEm5ye0G15/LuVxdhQnVctukbQFwKD65t3d6dQzv3ikKWmaWslozr/6alnjdsmJJYqANoI6BKw==
+"@serialport/parser-cctalk@^8.0.4":
+  version "8.0.4"
+  resolved "https://registry.yarnpkg.com/@serialport/parser-cctalk/-/parser-cctalk-8.0.4.tgz#433e13fa14c98e5fd03b74b5fe0aabf2bd5679be"
+  integrity sha512-7GsVAlVgk9pAMfuhbEy5m5t1pe8WCdR8HzXjroE8jwXCPHrGT7aY/sjZSTF91fx+qzqhojLiTJyIlf1HwnqM+g==
 
 "@serialport/parser-delimiter@^8.0.4":
   version "8.0.4"
@@ -1737,15 +1737,15 @@ scheduler@^0.13.3:
   resolved "https://registry.yarnpkg.com/semver/-/semver-5.6.0.tgz#7e74256fbaa49c75aa7c7a205cc22799cac80004"
   integrity sha512-RS9R6R35NYgQn++fkDWaOmqGoj4Ek9gGs+DPxNUZKuwE183xjJroKvyo1IzVFeXvUrvmALy6FWD5xrdJT25gMg==
 
-serialport@8.0.4:
-  version "8.0.4"
-  resolved "https://registry.yarnpkg.com/serialport/-/serialport-8.0.4.tgz#18489cb915aee15095c8defc14145903ca7109e0"
-  integrity sha512-/wAdMT8dqtJs2ia0irDOfHr2jbpu6Su/PXVeSlmBHQl2Y488Fycf4HU4bCCiMksdfpVSdcS5abCtJlkCelt/Mw==
+serialport@8.0.5:
+  version "8.0.5"
+  resolved "https://registry.yarnpkg.com/serialport/-/serialport-8.0.5.tgz#e7f719f8f30c35cfbf5628fb0e394423b38f3e49"
+  integrity sha512-hYWRpn+pRZWxwCZErLkYcja/ELSrB70dl+z9TcKIHKO2SlHDVNJmXAGGw2nfjg3AqmsHZvRRq8fu1SySYzbZUA==
   dependencies:
     "@serialport/binding-mock" "^8.0.4"
     "@serialport/bindings" "^8.0.4"
     "@serialport/parser-byte-length" "^8.0.4"
-    "@serialport/parser-cctalk" "^3.0.0"
+    "@serialport/parser-cctalk" "^8.0.4"
     "@serialport/parser-delimiter" "^8.0.4"
     "@serialport/parser-readline" "^8.0.4"
     "@serialport/parser-ready" "^8.0.4"
@@ -2025,10 +2025,10 @@ type-detect@4.0.8, type-detect@^4.0.0, type-detect@^4.0.5:
   resolved "https://registry.yarnpkg.com/type-detect/-/type-detect-4.0.8.tgz#7646fb5f18871cfbb7749e69bd39a6388eb7450c"
   integrity sha512-0fr/mIH1dlO+x7TlcMy+bIDqKPsw/70tVyeHW787goQjhmqaZe10uwLujubK9q9Lg6Fiho1KUKDYz0Z7k7g5/g==
 
-typescript@^3.6.4:
-  version "3.6.4"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.6.4.tgz#b18752bb3792bc1a0281335f7f6ebf1bbfc5b91d"
-  integrity sha512-unoCll1+l+YK4i4F8f22TaNVPRHcD9PA3yCuZ8g5e0qGqlVlJ/8FSateOLLSagn+Yg5+ZwuPkL8LFUc0Jcvksg==
+typescript@^3.7.2:
+  version "3.7.2"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.7.2.tgz#27e489b95fa5909445e9fef5ee48d81697ad18fb"
+  integrity sha512-ml7V7JfiN2Xwvcer+XAf2csGO1bPBdRbFCkYBczNZggrBZ9c7G3riSUeJmqEU5uOtXNPMhE3n+R4FA/3YOAWOQ==
 
 uglify-js@^3.1.4:
   version "3.4.9"
