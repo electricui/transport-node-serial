@@ -72,7 +72,9 @@ export default class SerialTransport extends Transport {
 
     this.inboundByteCounter += chunk.byteLength
 
-    this.readPipeline.push(chunk)
+    this.readPipeline.push(chunk).catch(err => {
+      console.warn('Could not parse part of chunk', err, 'inside', chunk)
+    })
   }
 
   resetBandwidthCounters() {
