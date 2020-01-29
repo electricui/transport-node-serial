@@ -29,6 +29,12 @@ export default class SerialTransport extends Transport {
   serialPort: any
   inboundByteCounter: number = 0
   outboundByteCounter: number = 0
+  /**
+   * Used as an escape hatch in hint-validator-binary-handshake in order to assign devices
+   * with the same boardID (because of a developer mistake) unique deviceIDs.
+   */
+  isSerialTransport = true as const
+  public comPath = ''
 
   constructor(options: SerialTransportOptions) {
     super(options)
@@ -53,6 +59,9 @@ export default class SerialTransport extends Transport {
       autoOpen: false,
       lock: false,
     })
+
+    // Used by hint-validator-binary-handshake
+    this.comPath = comPath
 
     this.serialPort.on('error', this.error)
     this.serialPort.on('data', this.receiveData)
