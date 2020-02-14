@@ -13,7 +13,7 @@ import {
   Source,
 } from '@electricui/core'
 
-import SerialPortHintProducer from '../src/hint-producer'
+import { SerialPortHintProducer } from '../src/hint-producer'
 
 const delay = (time: number) => {
   return new Promise((resolve, reject) => {

@@ -13,7 +13,7 @@ import {
   Source,
 } from '@electricui/core'
 
-import SerialTransport from '../src/transport'
+import { SerialTransport } from '../src/transport'
 
 const SerialPort = require('serialport/test')
 const MockBinding = SerialPort.Binding
@@ -103,7 +103,7 @@ describe('Node Serial Transport', () => {
 
     await source.push(chunk)
 
-    const binding = transport.serialPort.binding
+    const binding = transport.serialPort.binding as any
 
     assert.deepEqual(chunk, binding.lastWrite)
   })
