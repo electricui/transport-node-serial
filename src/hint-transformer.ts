@@ -1,6 +1,6 @@
 import { DiscoveryHintTransformer, Hint } from '@electricui/core'
 
-import SerialPortHintProducer from './hint-producer'
+import { SerialPortHintProducer } from './hint-producer'
 
 const dHintTransformer = require('debug')(
   'electricui-transport-node-serial:hint-producer',
@@ -14,7 +14,7 @@ interface SerialPortHintTransformerOptions {
   producer: SerialPortHintProducer
 }
 
-export default class SerialPortHintTransformer extends DiscoveryHintTransformer {
+export class SerialPortHintTransformer extends DiscoveryHintTransformer {
   transportKey: string
   producer: SerialPortHintProducer
   options: SerialPortHintTransformerOptions

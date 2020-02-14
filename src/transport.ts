@@ -31,7 +31,7 @@ class SerialWriteSink extends Sink {
   }
 }
 
-export default class SerialTransport extends Transport {
+export class SerialTransport extends Transport {
   serialPort: SerialPortNamespace
   inboundByteCounter: number = 0
   outboundByteCounter: number = 0

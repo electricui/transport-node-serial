@@ -1,4 +1,4 @@
-export { default as SerialPortHintProducer } from './src/hint-producer'
-export { default as SerialPortHintTransformer } from './src/hint-transformer'
-export { default as SerialTransport } from './src/transport'
+export { SerialPortHintProducer } from './src/hint-producer'
+export { SerialPortHintTransformer } from './src/hint-transformer'
 export { SerialBandwidthMetadataReporter } from './src/metadata-reporter'
+export { SerialTransportOptions, SerialTransport } from './src/transport'

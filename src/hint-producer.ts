@@ -13,7 +13,7 @@ interface SerialPortHintProducerOptions {
   baudRate?: number
 }
 
-export default class SerialPortHintProducer extends DiscoveryHintProducer {
+export class SerialPortHintProducer extends DiscoveryHintProducer {
   transportKey: string
   serialPort: any // SerialPort
   options: SerialPortHintProducerOptions

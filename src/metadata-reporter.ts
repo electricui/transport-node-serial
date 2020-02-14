@@ -1,5 +1,5 @@
 import { ConnectionMetadataReporter } from '@electricui/core'
-import SerialTransport from './transport'
+import { SerialTransport } from './transport'
 
 const dBandwidthReporter = require('debug')(
   'electricui-transport-node-serial:bandwidth-metadata',
