@@ -1,5 +1,7 @@
 import { Sink, Transport } from '@electricui/core'
 
+import { default as SerialPortNamespace } from 'serialport'
+
 const dTransport = require('debug')(
   'electricui-transport-node-serial:transport',
 )
@@ -7,9 +9,13 @@ const dTransport = require('debug')(
 export interface SerialTransportOptions {
   comPath: string
   baudRate: number
-  SerialPort: any
+  SerialPort: typeof SerialPortNamespace
   autoOpen?: false
   lock?: false
+  /**
+   * Arduinos are garbage so wait a certain period of time before reporting that a connection is open
+   */
+  attachmentDelay?: number
 }
 
 class SerialWriteSink extends Sink {
@@ -26,7 +32,7 @@ class SerialWriteSink extends Sink {
 }
 
 export default class SerialTransport extends Transport {
-  serialPort: any
+  serialPort: SerialPortNamespace
   inboundByteCounter: number = 0
   outboundByteCounter: number = 0
   /**
@@ -34,13 +40,15 @@ export default class SerialTransport extends Transport {
    * with the same boardID (because of a developer mistake) unique deviceIDs.
    */
   isSerialTransport = true as const
+  attachmentDelay: number
   public comPath = ''
 
   constructor(options: SerialTransportOptions) {
     super(options)
 
-    const { SerialPort, comPath, ...rest } = options
+    const { SerialPort, comPath, attachmentDelay, ...rest } = options
 
+    this.attachmentDelay = attachmentDelay ?? 0 // no delay by default
     this.writeToDevice = this.writeToDevice.bind(this)
 
     this.writePipeline = new SerialWriteSink(this.writeToDevice)
@@ -69,15 +77,22 @@ export default class SerialTransport extends Transport {
   }
 
   error(err: Error) {
+    dTransport('SerialPort reporting error', err)
     this.onError(err)
   }
 
   close(err: Error) {
+    dTransport('SerialPort reporting close', err)
     this.onClose(err)
   }
 
   receiveData(chunk: Buffer) {
-    dTransport('received raw serial data', chunk)
+    dTransport(
+      'received raw serial data',
+      chunk,
+      this.serialPort.isOpen ? 'isOpen' : '!isOpen',
+      this.serialPort.isPaused() ? 'isPaused' : '!isPaused',
+    )
 
     this.inboundByteCounter += chunk.byteLength
 
@@ -107,7 +122,8 @@ export default class SerialTransport extends Transport {
           return
         }
 
-        resolve()
+        // Wait a certain period of time before reporting the connection being open
+        setTimeout(resolve, this.attachmentDelay)
 
         this.resetBandwidthCounters()
       })
@@ -133,7 +149,12 @@ export default class SerialTransport extends Transport {
   }
 
   writeToDevice(chunk: Buffer) {
-    dTransport('writing raw serial data', chunk)
+    dTransport(
+      'writing raw serial data',
+      chunk,
+      this.serialPort.isOpen ? 'isOpen' : '!isOpen',
+      this.serialPort.isPaused() ? 'isPaused' : '!isPaused',
+    )
 
     return new Promise((resolve, reject) => {
       // check if we can continue
