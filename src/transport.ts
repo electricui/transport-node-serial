@@ -1,4 +1,5 @@
 import { Sink, Transport } from '@electricui/core'
+import { mark, measure } from './perf'
 
 import { default as SerialPortNamespace } from 'serialport'
 
@@ -115,15 +116,27 @@ export class SerialTransport extends Transport {
   }
 
   connect() {
+    mark(`serial:connect`)
     return new Promise((resolve, reject) => {
       this.serialPort.open((err: Error) => {
+        measure(`serial:connect`)
         if (err) {
           reject(err)
           return
         }
 
-        // Wait a certain period of time before reporting the connection being open
-        setTimeout(resolve, this.attachmentDelay)
+        if (this.attachmentDelay === 0) {
+          // syncronously resolve
+          resolve()
+        } else {
+          mark(`serial:connect-attachment-delay`)
+
+          // Wait a certain period of time before reporting the connection being open
+          setTimeout(() => {
+            measure(`serial:connect-attachment-delay`)
+            resolve()
+          }, this.attachmentDelay)
+        }
 
         this.resetBandwidthCounters()
       })
@@ -131,9 +144,11 @@ export class SerialTransport extends Transport {
   }
 
   disconnect() {
+    mark(`serial:disconnect`)
     if (this.serialPort.isOpen) {
       return new Promise((resolve, reject) => {
         this.serialPort.close((err: Error) => {
+          measure(`serial:disconnect`)
           if (err) {
             reject(err)
             return

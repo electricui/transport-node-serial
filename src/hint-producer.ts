@@ -1,4 +1,7 @@
 import { DiscoveryHintProducer, Hint } from '@electricui/core'
+import { mark, measure } from './perf'
+
+import { default as SerialPortNamespace } from 'serialport'
 
 const dHintProducer = require('debug')(
   'electricui-transport-node-serial:hint-producer',
@@ -9,13 +12,13 @@ const dHintProducer = require('debug')(
  */
 interface SerialPortHintProducerOptions {
   transportKey?: string
-  SerialPort: any
+  SerialPort: typeof SerialPortNamespace
   baudRate?: number
 }
 
 export class SerialPortHintProducer extends DiscoveryHintProducer {
   transportKey: string
-  serialPort: any // SerialPort
+  serialPort: typeof SerialPortNamespace
   options: SerialPortHintProducerOptions
   previousHints: Map<string, Hint> = new Map()
 
@@ -33,8 +36,9 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
 
     dHintProducer(`Polling`)
 
-    // TODO: figure out how to do this dependency injection
+    mark(`${this.transportKey}:list`)
     const ports = await this.serialPort.list()
+    measure(`${this.transportKey}:list`)
 
     dHintProducer(`Finished polling`)
 
@@ -46,6 +50,8 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
     // the current list of hints
     const currentHints: Map<string, Hint> = new Map()
 
+    mark(`${this.transportKey}:send-hints`)
+
     for (const port of ports) {
       // Create a hint for every port we found
       const hint = new Hint(this.transportKey)
@@ -53,7 +59,7 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
       hint.setAvailabilityHint()
 
       hint.setIdentification({
-        comPath: port.path || port.comName, // TODO: remove port.comName - it's depricated
+        comPath: port.path,
         vendorId: port.vendorId,
         productId: port.productId,
         manufacturer: port.manufacturer,
@@ -73,7 +79,11 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
       currentHints.set(hint.getHash(), hint)
     }
 
+    measure(`${this.transportKey}:send-hints`)
+
     const currentPollHashes = Array.from(currentHints.keys())
+
+    mark(`${this.transportKey}:send-unavailability-hints`)
 
     // We have our list of hints we just found, check if any of our previous
     // ones aren't in this set
@@ -94,6 +104,8 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
         this.foundHint(unavailabilityHint)
       }
     }
+
+    measure(`${this.transportKey}:send-unavailability-hints`)
 
     // Set our previous list to our current list
     this.previousHints = currentHints
