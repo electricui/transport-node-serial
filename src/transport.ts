@@ -1,7 +1,6 @@
+import { default as SerialPortNamespace, SetOptions } from 'serialport'
 import { Sink, Transport } from '@electricui/core'
 import { mark, measure } from './perf'
-
-import { default as SerialPortNamespace } from 'serialport'
 
 const dTransport = require('debug')(
   'electricui-transport-node-serial:transport',
@@ -17,6 +16,11 @@ export interface SerialTransportOptions {
    * Arduinos are garbage so wait a certain period of time before reporting that a connection is open
    */
   attachmentDelay?: number
+  onAttachmentPortSettings?: SetOptions
+}
+
+const onAttachmentPortSettingsDefault: SetOptions = {
+  rts: false,
 }
 
 class SerialWriteSink extends Sink {
@@ -42,6 +46,7 @@ export class SerialTransport extends Transport {
    */
   isSerialTransport = true as const
   attachmentDelay: number
+  onAttachmentPortSettings: SetOptions
   public comPath = ''
 
   constructor(options: SerialTransportOptions) {
@@ -68,6 +73,10 @@ export class SerialTransport extends Transport {
       autoOpen: false,
       lock: false,
     })
+
+    // Immediately set low level serialport stuff
+    this.onAttachmentPortSettings =
+      options.onAttachmentPortSettings ?? onAttachmentPortSettingsDefault
 
     // Used by hint-validator-binary-handshake
     this.comPath = comPath
@@ -124,6 +133,9 @@ export class SerialTransport extends Transport {
           reject(err)
           return
         }
+
+        // Set our port settings immediately
+        this.serialPort.set(this.onAttachmentPortSettings)
 
         if (this.attachmentDelay === 0) {
           // syncronously resolve
