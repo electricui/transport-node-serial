@@ -9,6 +9,7 @@ export class SerialBandwidthMetadataReporter extends ConnectionMetadataReporter 
   metadataKeys = ['bpsIn', 'bpsOut']
   intervalDelay: number = 1000
   interval: NodeJS.Timer | null = null
+  name = 'serial-bandwidth'
 
   constructor() {
     super()
