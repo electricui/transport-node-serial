@@ -106,7 +106,7 @@ export class SerialTransport extends Transport {
 
     this.inboundByteCounter += chunk.byteLength
 
-    this.readPipeline.push(chunk).catch(err => {
+    this.readPipeline.push(chunk).catch((err) => {
       console.warn('Could not parse part of chunk', err, 'inside', chunk)
     })
   }

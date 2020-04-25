@@ -3,6 +3,8 @@ import { mark, measure } from './perf'
 
 import { default as SerialPortNamespace } from 'serialport'
 
+export const SERIAL_TRANSPORT_KEY = 'serial'
+
 const dHintProducer = require('debug')(
   'electricui-transport-node-serial:hint-producer',
 )
@@ -25,7 +27,7 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
   constructor(options: SerialPortHintProducerOptions) {
     super()
 
-    this.transportKey = options.transportKey || 'serial'
+    this.transportKey = options.transportKey || SERIAL_TRANSPORT_KEY
     this.options = options
 
     this.serialPort = options.SerialPort
