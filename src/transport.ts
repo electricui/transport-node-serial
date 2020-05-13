@@ -2,9 +2,8 @@ import { default as SerialPortNamespace, SetOptions } from 'serialport'
 import { Sink, Transport } from '@electricui/core'
 import { mark, measure } from './perf'
 
-const dTransport = require('debug')(
-  'electricui-transport-node-serial:transport',
-)
+import debug from 'debug'
+const dTransport = debug('electricui-transport-node-serial:transport')
 
 export interface SerialTransportOptions {
   comPath: string
@@ -184,6 +183,11 @@ export class SerialTransport extends Transport {
     )
 
     return new Promise((resolve, reject) => {
+      if (!this.serialPort.isOpen) {
+        reject(new Error('Cannot write, serialport is closed'))
+        return
+      }
+
       // check if we can continue
       const canContinue = this.serialPort.write(chunk, (err: Error) => {
         if (err) {
