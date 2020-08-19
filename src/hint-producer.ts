@@ -23,6 +23,7 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
   serialPort: typeof SerialPortNamespace
   options: SerialPortHintProducerOptions
   previousHints: Map<string, Hint> = new Map()
+  currentPoll: Promise<void> | null = null
 
   constructor(options: SerialPortHintProducerOptions) {
     super()
@@ -31,9 +32,11 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
     this.options = options
 
     this.serialPort = options.SerialPort
+
+    this.internalPoll = this.internalPoll.bind(this)
   }
 
-  async poll() {
+  private async internalPoll() {
     this.setPolling(true)
 
     dHintProducer(`Polling`)
@@ -114,5 +117,18 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
 
     // We're no longer polling
     this.setPolling(false)
+  }
+
+  /**
+   * Return the same poll if there's currently one going.
+   */
+  poll() {
+    if (this.polling && this.currentPoll) {
+      return this.currentPoll
+    }
+
+    this.currentPoll = this.internalPoll()
+
+    return this.currentPoll
   }
 }
