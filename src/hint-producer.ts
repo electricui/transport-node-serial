@@ -18,12 +18,36 @@ interface SerialPortHintProducerOptions {
   baudRate?: number
 }
 
+export interface SerialPortHintIdentification {
+  comPath: string
+  vendorId?: number
+  productId?: number
+  manufacturer?: string
+  serialNumber?: string
+}
+
+export interface SerialPortHintConfiguration {
+  baudRate?: number
+}
+
+function processID(id?: string) {
+  if (!id) {
+    return 0x00
+  }
+  return Buffer.from(id, 'hex').readUInt16BE(0)
+}
+
 export class SerialPortHintProducer extends DiscoveryHintProducer {
   transportKey: string
-  serialPort: typeof SerialPortNamespace
-  options: SerialPortHintProducerOptions
-  previousHints: Map<string, Hint> = new Map()
-  currentPoll: Promise<void> | null = null
+  private serialPort: typeof SerialPortNamespace
+  private options: SerialPortHintProducerOptions
+  private previousHints: Map<
+    string,
+    Hint<SerialPortHintIdentification, SerialPortHintConfiguration>
+  > = new Map()
+  private currentPoll: Promise<
+    Hint<SerialPortHintIdentification, SerialPortHintConfiguration>[]
+  > | null = null
 
   constructor(options: SerialPortHintProducerOptions) {
     super()
@@ -34,6 +58,33 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
     this.serialPort = options.SerialPort
 
     this.internalPoll = this.internalPoll.bind(this)
+    this.portInfoToHint = this.portInfoToHint.bind(this)
+  }
+
+  private portInfoToHint(port: SerialPortNamespace.PortInfo) {
+    const hint = new Hint<
+      SerialPortHintIdentification,
+      SerialPortHintConfiguration
+    >(this.transportKey)
+
+    hint.setAvailabilityHint()
+
+    // Node serialport uses hex to represent the vendorId and productId, convert them to uint16s
+    // so that we match both our rust version and the node-usb IDs.
+
+    const vendorId = hint.setIdentification({
+      comPath: port.path,
+      vendorId: processID(port.vendorId),
+      productId: processID(port.productId),
+      manufacturer: port.manufacturer,
+      serialNumber: port.serialNumber,
+    })
+
+    hint.setConfiguration({
+      baudRate: this.options.baudRate,
+    })
+
+    return hint
   }
 
   private async internalPoll() {
@@ -48,32 +99,24 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
     dHintProducer(`Finished polling`)
 
     if (!this.polling) {
+      console.log(
+        'Serial producer poller was stopped after async serialport list callback returned',
+      )
       // if we were cancelled just don't send them up.
-      return
+      return []
     }
 
     // the current list of hints
-    const currentHints: Map<string, Hint> = new Map()
+    const currentHints: Map<
+      string,
+      Hint<SerialPortHintIdentification, SerialPortHintConfiguration>
+    > = new Map()
 
     mark(`${this.transportKey}:send-hints`)
 
     for (const port of ports) {
       // Create a hint for every port we found
-      const hint = new Hint(this.transportKey)
-
-      hint.setAvailabilityHint()
-
-      hint.setIdentification({
-        comPath: port.path,
-        vendorId: port.vendorId,
-        productId: port.productId,
-        manufacturer: port.manufacturer,
-        serialNumber: port.serialNumber,
-      })
-
-      hint.setConfiguration({
-        baudRate: this.options.baudRate,
-      })
+      const hint = this.portInfoToHint(port)
 
       dHintProducer(`Found hint ${hint.getHash()}`)
 
@@ -117,6 +160,8 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
 
     // We're no longer polling
     this.setPolling(false)
+
+    return Array.from(currentHints.values())
   }
 
   /**
