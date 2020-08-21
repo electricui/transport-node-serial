@@ -1,16 +1,18 @@
-import { default as SerialPortNamespace, SetOptions } from 'serialport'
+import {
+  OpenOptions,
+  default as SerialPortNamespace,
+  SetOptions,
+} from 'serialport'
 import { Sink, Transport } from '@electricui/core'
 import { mark, measure } from './perf'
 
 import debug from 'debug'
+
 const dTransport = debug('electricui-transport-node-serial:transport')
 
-export interface SerialTransportOptions {
+export interface SerialTransportOptions extends OpenOptions {
   comPath: string
-  baudRate: number
   SerialPort: typeof SerialPortNamespace
-  autoOpen?: false
-  lock?: false
   /**
    * Arduinos are garbage so wait a certain period of time before reporting that a connection is open
    */
@@ -51,7 +53,13 @@ export class SerialTransport extends Transport {
   constructor(options: SerialTransportOptions) {
     super(options)
 
-    const { SerialPort, comPath, attachmentDelay, ...rest } = options
+    const {
+      SerialPort,
+      comPath,
+      attachmentDelay,
+      onAttachmentPortSettings,
+      ...rest
+    } = options
 
     this.attachmentDelay = attachmentDelay ?? 0 // no delay by default
     this.writeToDevice = this.writeToDevice.bind(this)
@@ -75,7 +83,7 @@ export class SerialTransport extends Transport {
 
     // Immediately set low level serialport stuff
     this.onAttachmentPortSettings =
-      options.onAttachmentPortSettings ?? onAttachmentPortSettingsDefault
+      onAttachmentPortSettings ?? onAttachmentPortSettingsDefault
 
     // Used by hint-validator-binary-handshake
     this.comPath = comPath
@@ -184,7 +192,12 @@ export class SerialTransport extends Transport {
 
     return new Promise((resolve, reject) => {
       if (!this.serialPort.isOpen) {
-        reject(new Error('Cannot write, serialport is closed'))
+        const err = new Error('Cannot write, serialport is closed')
+
+        // Increase the stack trace limit
+        Error.stackTraceLimit = 100
+
+        reject(err)
         return
       }
 
@@ -195,6 +208,14 @@ export class SerialTransport extends Transport {
           return
         }
       })
+
+      // if we can't continue, pause the transport until the drain event
+      if (!canContinue) {
+        this.pause()
+        this.serialPort.once('drain', () => {
+          this.resume()
+        })
+      }
 
       // don't return this promise until the OS has drained it's buffer
       this.serialPort.drain((err: Error) => {
@@ -207,14 +228,6 @@ export class SerialTransport extends Transport {
 
         resolve()
       })
-
-      // if we can't continue, pause the transport until the drain event
-      if (!canContinue) {
-        this.pause()
-        this.serialPort.once('drain', () => {
-          this.resume()
-        })
-      }
     })
   }
 }
