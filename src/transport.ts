@@ -1,9 +1,9 @@
+import { CancellationToken, Sink, Transport } from '@electricui/core'
 import {
   OpenOptions,
   default as SerialPortNamespace,
   SetOptions,
 } from 'serialport'
-import { Sink, Transport } from '@electricui/core'
 import { mark, measure } from './perf'
 
 import debug from 'debug'
@@ -25,15 +25,20 @@ const onAttachmentPortSettingsDefault: SetOptions = {
 }
 
 class SerialWriteSink extends Sink {
-  callback: (chunk: any) => Promise<any>
+  callback: (chunk: any, cancellationToken: CancellationToken) => Promise<any>
 
-  constructor(callback: (chunk: any) => Promise<any>) {
+  constructor(
+    callback: (
+      chunk: any,
+      cancellationToken: CancellationToken,
+    ) => Promise<any>,
+  ) {
     super()
     this.callback = callback
   }
 
-  receive(chunk: any) {
-    return this.callback(chunk)
+  receive(chunk: any, cancellationToken: CancellationToken) {
+    return this.callback(chunk, cancellationToken)
   }
 }
 
@@ -113,7 +118,10 @@ export class SerialTransport extends Transport {
 
     this.inboundByteCounter += chunk.byteLength
 
-    this.readPipeline.push(chunk).catch(err => {
+    // This is a bit meaningless since nothing should fail now.
+    const cancellationToken = new CancellationToken()
+
+    this.readPipeline.push(chunk, cancellationToken).catch(err => {
       console.warn('Could not parse part of chunk', err, 'inside', chunk)
     })
   }
@@ -182,7 +190,7 @@ export class SerialTransport extends Transport {
     return Promise.resolve()
   }
 
-  writeToDevice(chunk: Buffer) {
+  writeToDevice(chunk: Buffer, cancellationToken: CancellationToken) {
     dTransport(
       'writing raw serial data',
       chunk,
@@ -200,6 +208,9 @@ export class SerialTransport extends Transport {
         reject(err)
         return
       }
+
+      // Cancel this promise if the token is cancelled
+      cancellationToken.subscribe(reject)
 
       // check if we can continue
       const canContinue = this.serialPort.write(chunk, (err: Error) => {

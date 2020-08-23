@@ -1,4 +1,8 @@
-import { DiscoveryHintProducer, Hint } from '@electricui/core'
+import {
+  CancellationToken,
+  DiscoveryHintProducer,
+  Hint,
+} from '@electricui/core'
 import { mark, measure } from './perf'
 
 import { default as SerialPortNamespace } from 'serialport'
@@ -87,7 +91,7 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
     return hint
   }
 
-  private async internalPoll() {
+  private async internalPoll(cancellationToken: CancellationToken) {
     this.setPolling(true)
 
     dHintProducer(`Polling`)
@@ -120,8 +124,10 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
 
       dHintProducer(`Found hint ${hint.getHash()}`)
 
+      // Serial hints should return in about
+
       // Let the UI know we've found the port
-      this.foundHint(hint)
+      this.foundHint(hint, cancellationToken)
 
       // Add the hint we found this time to our list
       currentHints.set(hint.getHash(), hint)
@@ -149,7 +155,7 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
         )
 
         // Let the UI know we've found the unavailability hint
-        this.foundHint(unavailabilityHint)
+        this.foundHint(unavailabilityHint, cancellationToken)
       }
     }
 
@@ -167,12 +173,12 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
   /**
    * Return the same poll if there's currently one going.
    */
-  poll() {
+  poll(cancellationToken: CancellationToken) {
     if (this.polling && this.currentPoll) {
       return this.currentPoll
     }
 
-    this.currentPoll = this.internalPoll()
+    this.currentPoll = this.internalPoll(cancellationToken)
 
     return this.currentPoll
   }
