@@ -127,7 +127,11 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
       // Serial hints should return in about
 
       // Let the UI know we've found the port
-      this.foundHint(hint, cancellationToken)
+      this.foundHint(hint, cancellationToken).catch(err => {
+        if (!cancellationToken.caused(err)) {
+          console.warn("Couldn't pass serial polled hint up")
+        }
+      })
 
       // Add the hint we found this time to our list
       currentHints.set(hint.getHash(), hint)
@@ -155,7 +159,11 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
         )
 
         // Let the UI know we've found the unavailability hint
-        this.foundHint(unavailabilityHint, cancellationToken)
+        this.foundHint(unavailabilityHint, cancellationToken).catch(err => {
+          if (!cancellationToken.caused(err)) {
+            console.warn("Couldn't pass serial detachment hint up")
+          }
+        })
       }
     }
 
