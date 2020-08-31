@@ -56,7 +56,7 @@ export class SerialTransport extends Transport {
   public comPath = ''
 
   constructor(options: SerialTransportOptions) {
-    super(options)
+    super()
 
     const {
       SerialPort,
