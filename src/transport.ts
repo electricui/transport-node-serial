@@ -139,7 +139,7 @@ export class SerialTransport extends Transport {
     return this.inboundByteCounter
   }
 
-  connect() {
+  connect(cancellationToken: CancellationToken) {
     mark(`serial:connect`)
     return new Promise((resolve, reject) => {
       this.serialPort.open((err: Error) => {
@@ -170,7 +170,7 @@ export class SerialTransport extends Transport {
     })
   }
 
-  disconnect() {
+  disconnect(cancellationToken: CancellationToken) {
     mark(`serial:disconnect`)
     if (this.serialPort.isOpen) {
       return new Promise((resolve, reject) => {
