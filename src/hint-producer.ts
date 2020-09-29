@@ -1,17 +1,11 @@
-import {
-  CancellationToken,
-  DiscoveryHintProducer,
-  Hint,
-} from '@electricui/core'
+import { CancellationToken, DiscoveryHintProducer, Hint } from '@electricui/core'
 import { mark, measure } from './perf'
 
 import { default as SerialPortNamespace } from 'serialport'
 
 export const SERIAL_TRANSPORT_KEY = 'serial'
 
-const dHintProducer = require('debug')(
-  'electricui-transport-node-serial:hint-producer',
-)
+const dHintProducer = require('debug')('electricui-transport-node-serial:hint-producer')
 
 /**
  * The baudrate is optional, as they may use a transformer to add several baudRate options if they wish
@@ -34,6 +28,12 @@ export interface SerialPortHintConfiguration {
   baudRate?: number
 }
 
+export function validateHintIsSerialHint(
+  hint: Hint,
+): hint is Hint<SerialPortHintIdentification, SerialPortHintConfiguration> {
+  return hint.getTransportKey() === SERIAL_TRANSPORT_KEY
+}
+
 function processID(id?: string) {
   if (!id) {
     return 0x00
@@ -45,13 +45,8 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
   transportKey: string
   private serialPort: typeof SerialPortNamespace
   private options: SerialPortHintProducerOptions
-  private previousHints: Map<
-    string,
-    Hint<SerialPortHintIdentification, SerialPortHintConfiguration>
-  > = new Map()
-  private currentPoll: Promise<
-    Hint<SerialPortHintIdentification, SerialPortHintConfiguration>[]
-  > | null = null
+  private previousHints: Map<string, Hint<SerialPortHintIdentification, SerialPortHintConfiguration>> = new Map()
+  private currentPoll: Promise<Hint<SerialPortHintIdentification, SerialPortHintConfiguration>[]> | null = null
 
   constructor(options: SerialPortHintProducerOptions) {
     super()
@@ -66,10 +61,7 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
   }
 
   private portInfoToHint(port: SerialPortNamespace.PortInfo) {
-    const hint = new Hint<
-      SerialPortHintIdentification,
-      SerialPortHintConfiguration
-    >(this.transportKey)
+    const hint = new Hint<SerialPortHintIdentification, SerialPortHintConfiguration>(this.transportKey)
 
     hint.setAvailabilityHint()
 
@@ -103,18 +95,13 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
     dHintProducer(`Finished polling`)
 
     if (!this.polling) {
-      console.log(
-        'Serial producer poller was stopped after async serialport list callback returned',
-      )
+      console.log('Serial producer poller was stopped after async serialport list callback returned')
       // if we were cancelled just don't send them up.
       return []
     }
 
     // the current list of hints
-    const currentHints: Map<
-      string,
-      Hint<SerialPortHintIdentification, SerialPortHintConfiguration>
-    > = new Map()
+    const currentHints: Map<string, Hint<SerialPortHintIdentification, SerialPortHintConfiguration>> = new Map()
 
     mark(`${this.transportKey}:send-hints`)
 
@@ -154,9 +141,7 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
         unavailabilityHint.setIdentification(hint.getIdentification())
         unavailabilityHint.setConfiguration(hint.getConfiguration())
 
-        dHintProducer(
-          `Found a hint that isn't there anymore! ${hint.getHash()} `,
-        )
+        dHintProducer(`Found a hint that isn't there anymore! ${hint.getHash()} `)
 
         // Let the UI know we've found the unavailability hint
         this.foundHint(unavailabilityHint, cancellationToken).catch(err => {
