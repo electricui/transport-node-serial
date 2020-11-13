@@ -1,9 +1,5 @@
 import { CancellationToken, Sink, Transport } from '@electricui/core'
-import {
-  OpenOptions,
-  default as SerialPortNamespace,
-  SetOptions,
-} from 'serialport'
+import { OpenOptions, default as SerialPortNamespace, SetOptions } from 'serialport'
 import { mark, measure } from './perf'
 
 import debug from 'debug'
@@ -27,12 +23,7 @@ const onAttachmentPortSettingsDefault: SetOptions = {
 class SerialWriteSink extends Sink {
   callback: (chunk: any, cancellationToken: CancellationToken) => Promise<any>
 
-  constructor(
-    callback: (
-      chunk: any,
-      cancellationToken: CancellationToken,
-    ) => Promise<any>,
-  ) {
+  constructor(callback: (chunk: any, cancellationToken: CancellationToken) => Promise<any>) {
     super()
     this.callback = callback
   }
@@ -58,13 +49,7 @@ export class SerialTransport extends Transport {
   constructor(options: SerialTransportOptions) {
     super()
 
-    const {
-      SerialPort,
-      comPath,
-      attachmentDelay,
-      onAttachmentPortSettings,
-      ...rest
-    } = options
+    const { SerialPort, comPath, attachmentDelay, onAttachmentPortSettings, ...rest } = options
 
     this.attachmentDelay = attachmentDelay ?? 0 // no delay by default
     this.writeToDevice = this.writeToDevice.bind(this)
@@ -75,9 +60,7 @@ export class SerialTransport extends Transport {
     this.error = this.error.bind(this)
     this.close = this.close.bind(this)
     this.resetBandwidthCounters = this.resetBandwidthCounters.bind(this)
-    this.getOutboundBandwidthCounter = this.getOutboundBandwidthCounter.bind(
-      this,
-    )
+    this.getOutboundBandwidthCounter = this.getOutboundBandwidthCounter.bind(this)
     this.getInboundBandwidthCounter = this.getInboundBandwidthCounter.bind(this)
 
     this.serialPort = new SerialPort(comPath, {
@@ -87,8 +70,7 @@ export class SerialTransport extends Transport {
     })
 
     // Immediately set low level serialport stuff
-    this.onAttachmentPortSettings =
-      onAttachmentPortSettings ?? onAttachmentPortSettingsDefault
+    this.onAttachmentPortSettings = onAttachmentPortSettings ?? onAttachmentPortSettingsDefault
 
     // Used by hint-validator-binary-handshake
     this.comPath = comPath

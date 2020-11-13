@@ -1,14 +1,8 @@
-import {
-  CancellationToken,
-  DiscoveryHintTransformer,
-  Hint,
-} from '@electricui/core'
+import { CancellationToken, DiscoveryHintTransformer, Hint } from '@electricui/core'
 
 import { SerialPortHintProducer } from './hint-producer'
 
-const dHintTransformer = require('debug')(
-  'electricui-transport-node-serial:usb-hint-transformer',
-)
+const dHintTransformer = require('debug')('electricui-transport-node-serial:usb-hint-transformer')
 
 /**
  * The baudrate is optional, as they may use a transformer to add several baudRate options if they wish
@@ -49,14 +43,9 @@ export class SerialPortUSBHintTransformer extends DiscoveryHintTransformer {
     return hint.getTransportKey() === this.transportKey
   }
 
-  async processAvailabilityHint(
-    hint: Hint<USBAvailabilityHintIdentification>,
-    cancellationToken: CancellationToken,
-  ) {
+  async processAvailabilityHint(hint: Hint<USBAvailabilityHintIdentification>, cancellationToken: CancellationToken) {
     // Continue polling until there's a hint that matches the vid and pid
     const { vendorId, productId } = hint.getIdentification()
-
-    const continuationSignal = { signal: true }
 
     const startTime = new Date().getTime()
 
@@ -67,10 +56,7 @@ export class SerialPortUSBHintTransformer extends DiscoveryHintTransformer {
       for (const polledHint of polledHints) {
         const polledHintIdentification = polledHint.getIdentification()
 
-        if (
-          polledHintIdentification.vendorId === vendorId &&
-          polledHintIdentification.productId === productId
-        ) {
+        if (polledHintIdentification.vendorId === vendorId && polledHintIdentification.productId === productId) {
           dHintTransformer(
             'Found serial port with vendorId',
             vendorId,
@@ -87,25 +73,17 @@ export class SerialPortUSBHintTransformer extends DiscoveryHintTransformer {
       }
 
       // Otherwise continue polling, wait a little while before trying again
-      await new Promise((resolve, reject) =>
-        setTimeout(resolve, this.pollInterval),
-      )
+      await new Promise((resolve, reject) => setTimeout(resolve, this.pollInterval))
     }
   }
 
-  async processUnavailabilityHint(
-    hint: Hint<USBAvailabilityHintIdentification>,
-    cancellationToken: CancellationToken,
-  ) {
+  async processUnavailabilityHint(hint: Hint<USBAvailabilityHintIdentification>, cancellationToken: CancellationToken) {
     // The producer keeps track of poll attempts and raises unavailability hints if they're no longer available
     // Trigger this lookup now that we're pretty sure that a device has just disconnected
     this.producer.poll(cancellationToken)
   }
 
-  async transform(
-    hint: Hint<USBAvailabilityHintIdentification>,
-    cancellationToken: CancellationToken,
-  ) {
+  async transform(hint: Hint<USBAvailabilityHintIdentification>, cancellationToken: CancellationToken) {
     // the transport key is from the usb
 
     if (hint.isAvailabilityHint()) {
