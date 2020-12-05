@@ -94,9 +94,8 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
 
     dHintProducer(`Finished polling`)
 
-    if (!this.polling) {
-      console.log('Serial producer poller was stopped after async serialport list callback returned')
-      // if we were cancelled just don't send them up.
+    if (cancellationToken.isCancelled() || !this.polling) {
+      // We were cancelled, don't bother sending it up
       return []
     }
 
