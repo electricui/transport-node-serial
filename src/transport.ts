@@ -123,7 +123,7 @@ export class SerialTransport extends Transport {
 
   connect(cancellationToken: CancellationToken) {
     mark(`serial:connect`)
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       this.serialPort.open((err: Error) => {
         measure(`serial:connect`)
         if (err) {
@@ -155,7 +155,7 @@ export class SerialTransport extends Transport {
   disconnect(cancellationToken: CancellationToken) {
     mark(`serial:disconnect`)
     if (this.serialPort.isOpen) {
-      return new Promise((resolve, reject) => {
+      return new Promise<void>((resolve, reject) => {
         this.serialPort.close((err: Error) => {
           measure(`serial:disconnect`)
           if (err) {
@@ -180,7 +180,7 @@ export class SerialTransport extends Transport {
       this.serialPort.isPaused() ? 'isPaused' : '!isPaused',
     )
 
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       if (!this.serialPort.isOpen) {
         const err = new Error('Cannot write, serialport is closed')
 
