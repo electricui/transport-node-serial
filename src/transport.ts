@@ -104,7 +104,7 @@ export class SerialTransport extends Transport {
     const cancellationToken = new CancellationToken()
 
     this.readPipeline.push(chunk, cancellationToken).catch(err => {
-      console.warn('Could not parse part of chunk', err, 'inside', chunk)
+      dTransport('Could not parse part of chunk', err, 'inside', chunk)
     })
   }
 
