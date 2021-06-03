@@ -81,12 +81,16 @@ export class SerialTransport extends Transport {
   }
 
   error(err: Error) {
-    dTransport('SerialPort reporting error', err)
+    dTransport('SerialPort reporting error with error', err, 'on', this.comPath)
     this.onError(err)
   }
 
   close(err: Error) {
-    dTransport('SerialPort reporting close', err)
+    if (err) {
+      dTransport('SerialPort reporting close with error', err, 'on', this.comPath)
+    } else {
+      dTransport('SerialPort reporting close without error on ', this.comPath)
+    }
     this.onClose(err)
   }
 
@@ -123,9 +127,11 @@ export class SerialTransport extends Transport {
 
   connect(cancellationToken: CancellationToken) {
     mark(`serial:connect`)
+    dTransport('Connecting to', this.comPath)
     return new Promise<void>((resolve, reject) => {
       this.serialPort.open((err: Error) => {
         measure(`serial:connect`)
+        dTransport('Connected to', this.comPath)
         if (err) {
           reject(err)
           return
@@ -134,8 +140,10 @@ export class SerialTransport extends Transport {
         // Set our port settings immediately
         this.serialPort.set(this.onAttachmentPortSettings)
 
+        dTransport('Set our settings', this.onAttachmentPortSettings, 'on', this.comPath)
         if (this.attachmentDelay === 0) {
           // syncronously resolve
+          dTransport('Resolving connection on', this.comPath)
           resolve()
         } else {
           mark(`serial:connect-attachment-delay`)
@@ -143,6 +151,7 @@ export class SerialTransport extends Transport {
           // Wait a certain period of time before reporting the connection being open
           setTimeout(() => {
             measure(`serial:connect-attachment-delay`)
+            dTransport('Resolving connection on', this.comPath)
             resolve()
           }, this.attachmentDelay)
         }
@@ -154,21 +163,25 @@ export class SerialTransport extends Transport {
 
   disconnect(cancellationToken: CancellationToken) {
     mark(`serial:disconnect`)
+    dTransport('Disconnecting from', this.comPath)
     if (this.serialPort.isOpen) {
       return new Promise<void>((resolve, reject) => {
         this.serialPort.close((err: Error) => {
           measure(`serial:disconnect`)
           if (err) {
+            dTransport("Couldn't disconnect from ", this.comPath, 'due to', err)
             reject(err)
             return
           }
 
           this.resetBandwidthCounters()
 
+          dTransport('Disconnected from', this.comPath)
           resolve()
         })
       })
     }
+    dTransport('Was already disconnected from', this.comPath)
     return Promise.resolve()
   }
 
