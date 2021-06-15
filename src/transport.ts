@@ -51,6 +51,10 @@ export class SerialTransport extends Transport {
 
     const { SerialPort, comPath, attachmentDelay, onAttachmentPortSettings, ...rest } = options
 
+    if (!comPath) {
+      throw new Error('The SerialTransport needs a comPath passed to it.')
+    }
+
     this.attachmentDelay = attachmentDelay ?? 0 // no delay by default
     this.writeToDevice = this.writeToDevice.bind(this)
 
