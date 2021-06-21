@@ -51,7 +51,7 @@ export class SerialPortUSBHintTransformer extends DiscoveryHintTransformer {
 
     // Labelled while loop, since we break out of it within the for loop below
     poll: while (!cancellationToken.isCancelled()) {
-      const polledHints = await this.producer.poll(cancellationToken)
+      const polledHints = await this.producer.internalPoll(cancellationToken)
 
       for (const polledHint of polledHints) {
         const polledHintIdentification = polledHint.getIdentification()
