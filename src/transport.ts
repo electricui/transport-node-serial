@@ -165,7 +165,7 @@ export class SerialTransport extends Transport {
     })
   }
 
-  disconnect(cancellationToken: CancellationToken) {
+  disconnect() {
     mark(`serial:disconnect`)
     dTransport('Disconnecting from', this.comPath)
     if (this.serialPort.isOpen) {

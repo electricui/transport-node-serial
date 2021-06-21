@@ -20,7 +20,6 @@
   "dependencies": {
     "@electricui/core": "^0.8.9",
     "@electricui/protocol-binary-constants": "^0.8.0",
-    "bluebird": "^3.5.3",
     "debug": "^4.3.1"
   },
   "devDependencies": {
