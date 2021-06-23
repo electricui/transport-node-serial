@@ -162,6 +162,9 @@ export class SerialTransport extends Transport {
 
         this.resetBandwidthCounters()
       })
+
+      // Cancel this promise if the token is cancelled
+      cancellationToken.subscribe(reject)
     })
   }
 
