@@ -1,15 +1,16 @@
 import { ConnectionMetadataReporter } from '@electricui/core'
 import { SerialTransport } from './transport'
 
-const dBandwidthReporter = require('debug')(
-  'electricui-transport-node-serial:bandwidth-metadata',
-)
+const dBandwidthReporter = require('debug')('electricui-transport-node-serial:bandwidth-metadata')
 
 export class SerialBandwidthMetadataReporter extends ConnectionMetadataReporter {
+  getIdentifier() {
+    return 'serial-bandwidth-metadata-reporter' as const
+  }
+
   metadataKeys = ['bpsIn', 'bpsOut']
   intervalDelay: number = 1000
   interval: NodeJS.Timer | null = null
-  name = 'serial-bandwidth'
 
   constructor() {
     super()
