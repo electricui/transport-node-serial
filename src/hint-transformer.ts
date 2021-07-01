@@ -1,4 +1,5 @@
-import { CancellationToken, DiscoveryHintTransformer, Hint } from '@electricui/core'
+import { DiscoveryHintTransformer, Hint } from '@electricui/core'
+import { CancellationToken } from '@electricui/async-utilities'
 
 import { SerialPortHintProducer } from './hint-producer'
 

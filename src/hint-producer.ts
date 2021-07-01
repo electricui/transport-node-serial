@@ -1,5 +1,6 @@
-import { CancellationToken, DiscoveryHintProducer, Hint } from '@electricui/core'
+import { DiscoveryHintProducer, Hint } from '@electricui/core'
 import { mark, measure } from './perf'
+import { CancellationToken } from '@electricui/async-utilities'
 
 import { default as SerialPortNamespace } from 'serialport'
 
