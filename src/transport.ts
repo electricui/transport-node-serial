@@ -1,4 +1,5 @@
-import { CancellationToken, Sink, Transport } from '@electricui/core'
+import { Sink, Transport } from '@electricui/core'
+import { CancellationToken } from '@electricui/async-utilities'
 import { OpenOptions, default as SerialPortNamespace, SetOptions } from 'serialport'
 import { mark, measure } from './perf'
 
