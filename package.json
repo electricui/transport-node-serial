@@ -18,15 +18,15 @@
     "manifest.json"
   ],
   "dependencies": {
-    "@electricui/async-utilities": "^0.8.8",
-    "@electricui/core": "^0.8.9",
-    "@electricui/protocol-binary-constants": "^0.8.0",
+    "@electricui/async-utilities": "workspace:*",
+    "@electricui/core": "workspace:*",
+    "@electricui/protocol-binary-constants": "workspace:*",
     "debug": "^4.3.1"
   },
   "devDependencies": {
-    "@electricui/build-rollup-config": "^0.8.0",
-    "@electricui/jest-config": "^0.8.0",
-    "@electricui/protocol-binary": "^0.8.9",
+    "@electricui/build-rollup-config": "workspace:*",
+    "@electricui/jest-config": "workspace:*",
+    "@electricui/protocol-binary": "workspace:*",
     "@types/chai": "^4.1.7",
     "@types/chai-subset": "^1.3.2",
     "@types/debug": "^4.1.1",
