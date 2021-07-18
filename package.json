@@ -39,7 +39,7 @@
     "mocha": "^5.2.0",
     "nyc": "^13.3.0",
     "rollup": "2.51.2",
-    "serialport": "9.0.0",
+    "serialport": "9.2.0",
     "sinon": "^7.2.3",
     "ts-node": "^9.0.0",
     "tslib": "^2.0.3",
