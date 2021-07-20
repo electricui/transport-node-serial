@@ -52,6 +52,10 @@ export class SerialTransport extends Transport {
 
     const { SerialPort, comPath, attachmentDelay, onAttachmentPortSettings, ...rest } = options
 
+    if (!SerialPort) {
+      throw new Error('SerialPort must be passed to transport-node-serial.')
+    }
+
     if (!comPath) {
       throw new Error('The SerialTransport needs a comPath passed to it.')
     }
