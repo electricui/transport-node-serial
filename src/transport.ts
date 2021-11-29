@@ -97,6 +97,7 @@ export class SerialTransport extends Transport {
   close(err: Error) {
     if (err) {
       dTransport('SerialPort reporting close with error', err, 'on', this.comPath)
+      this.onError(err)
     } else {
       dTransport('SerialPort reporting close without error on ', this.comPath)
     }
