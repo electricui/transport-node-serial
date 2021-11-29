@@ -69,7 +69,7 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
     // Node serialport uses hex to represent the vendorId and productId, convert them to uint16s
     // so that we match both our rust version and the node-usb IDs.
 
-    const vendorId = hint.setIdentification({
+    hint.setIdentification({
       comPath: port.path,
       vendorId: processID(port.vendorId),
       productId: processID(port.productId),
