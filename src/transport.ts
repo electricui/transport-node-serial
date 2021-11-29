@@ -75,7 +75,7 @@ export class SerialTransport extends Transport {
     this.serialPort = new SerialPort(comPath, {
       ...rest,
       autoOpen: false,
-      lock: false,
+      lock: true,
     })
 
     // Immediately set low level serialport stuff
