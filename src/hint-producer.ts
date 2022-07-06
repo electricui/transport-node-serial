@@ -2,23 +2,21 @@ import { DiscoveryHintProducer, Hint } from '@electricui/core'
 import { mark, measure } from './perf'
 import { CancellationToken } from '@electricui/async-utilities'
 
-import { default as SerialPortNamespace } from 'serialport'
+import { SerialPort } from 'serialport'
+import { PortInfo } from '@serialport/bindings-cpp'
 
 export const SERIAL_TRANSPORT_KEY = 'serial'
 
 const dHintProducer = require('debug')('electricui-transport-node-serial:hint-producer')
 
-/**
- * The baudrate is optional, as they may use a transformer to add several baudRate options if they wish
- */
 interface SerialPortHintProducerOptions {
   transportKey?: string
-  SerialPort: typeof SerialPortNamespace
-  baudRate?: number
+  SerialPort: typeof SerialPort
+  baudRate: number
 }
 
 export interface SerialPortHintIdentification {
-  comPath: string
+  path: string
   vendorId?: number
   productId?: number
   manufacturer?: string
@@ -26,7 +24,7 @@ export interface SerialPortHintIdentification {
 }
 
 export interface SerialPortHintConfiguration {
-  baudRate?: number
+  baudRate: number
 }
 
 export function validateHintIsSerialHint(
@@ -44,7 +42,7 @@ function processID(id?: string) {
 
 export class SerialPortHintProducer extends DiscoveryHintProducer {
   transportKey: string
-  private serialPort: typeof SerialPortNamespace
+  private SerialPort: typeof SerialPort
   private options: SerialPortHintProducerOptions
   private previousHints: Map<string, Hint<SerialPortHintIdentification, SerialPortHintConfiguration>> = new Map()
   private currentPoll: Promise<void> | null = null
@@ -55,13 +53,13 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
     this.transportKey = options.transportKey || SERIAL_TRANSPORT_KEY
     this.options = options
 
-    this.serialPort = options.SerialPort
+    this.SerialPort = options.SerialPort
 
     this.internalPoll = this.internalPoll.bind(this)
     this.portInfoToHint = this.portInfoToHint.bind(this)
   }
 
-  private portInfoToHint(port: SerialPortNamespace.PortInfo) {
+  private portInfoToHint(port: PortInfo) {
     const hint = new Hint<SerialPortHintIdentification, SerialPortHintConfiguration>(this.transportKey)
 
     hint.setAvailabilityHint()
@@ -70,7 +68,7 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
     // so that we match both our rust version and the node-usb IDs.
 
     hint.setIdentification({
-      comPath: port.path,
+      path: port.path,
       vendorId: processID(port.vendorId),
       productId: processID(port.productId),
       manufacturer: port.manufacturer,
@@ -90,7 +88,7 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
     dHintProducer(`Polling`)
 
     mark(`${this.transportKey}:list`)
-    const ports = await this.serialPort.list()
+    const ports = await this.SerialPort.list()
     measure(`${this.transportKey}:list`)
 
     dHintProducer(`Finished polling`)

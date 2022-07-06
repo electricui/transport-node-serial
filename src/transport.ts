@@ -1,15 +1,51 @@
 import { Sink, Transport } from '@electricui/core'
 import { CancellationToken } from '@electricui/async-utilities'
-import { OpenOptions, default as SerialPortNamespace, SetOptions } from 'serialport'
+import { SerialPortOpenOptions, SerialPort } from 'serialport'
+import type {
+  SetOptions,
+  AutoDetectTypes,
+  DarwinBindingInterface,
+  WindowsBindingInterface,
+  LinuxBindingInterface,
+  OpenOptions,
+} from '@serialport/bindings-cpp'
+
 import { mark, measure } from './perf'
 
 import debug from 'debug'
 
 const dTransport = debug('electricui-transport-node-serial:transport')
 
+// Because of Typescript shenannigans, we're pulling the interfaces from @serialport/bindings-cpp in manually
+
 export interface SerialTransportOptions extends OpenOptions {
-  comPath: string
-  SerialPort: typeof SerialPortNamespace
+  // Darwin
+
+  /** Defaults to none */
+  //parity?: 'none' | 'even' | 'odd'
+  /** see [`man termios`](http://linux.die.net/man/3/termios) defaults to 1 */
+  vmin?: number
+  /** see [`man termios`](http://linux.die.net/man/3/termios) defaults to 0 */
+  vtime?: number
+
+  // Windows
+
+  /** Device parity defaults to none */
+  parity?: 'none' | 'even' | 'odd' | 'mark' | 'space'
+  /** RTS mode defaults to handshake */
+  rtsMode?: 'handshake' | 'enable' | 'toggle'
+
+  // Linux
+
+  /** Defaults to none */
+  // parity?: 'none' | 'even' | 'odd'
+  /** see [`man termios`](http://linux.die.net/man/3/termios) defaults to 1 */
+  // vmin?: number
+  /** see [`man termios`](http://linux.die.net/man/3/termios) defaults to 0 */
+  // vtime?: number
+
+  path: string
+  SerialPort: typeof SerialPort
   /**
    * Arduinos are garbage so wait a certain period of time before reporting that a connection is open
    */
@@ -35,7 +71,7 @@ class SerialWriteSink extends Sink {
 }
 
 export class SerialTransport extends Transport {
-  serialPort: SerialPortNamespace
+  SerialPort: SerialPort
   inboundByteCounter: number = 0
   outboundByteCounter: number = 0
   /**
@@ -45,19 +81,19 @@ export class SerialTransport extends Transport {
   isSerialTransport = true as const
   attachmentDelay: number
   onAttachmentPortSettings: SetOptions
-  public comPath = ''
+  public path = ''
 
   constructor(options: SerialTransportOptions) {
     super()
 
-    const { SerialPort, comPath, attachmentDelay, onAttachmentPortSettings, ...rest } = options
+    const { SerialPort, path, attachmentDelay, onAttachmentPortSettings, ...rest } = options
 
     if (!SerialPort) {
       throw new Error('SerialPort must be passed to transport-node-serial.')
     }
 
-    if (!comPath) {
-      throw new Error('The SerialTransport needs a comPath passed to it.')
+    if (!path) {
+      throw new Error('The SerialTransport needs a path passed to it.')
     }
 
     this.attachmentDelay = attachmentDelay ?? 0 // no delay by default
@@ -72,8 +108,9 @@ export class SerialTransport extends Transport {
     this.getOutboundBandwidthCounter = this.getOutboundBandwidthCounter.bind(this)
     this.getInboundBandwidthCounter = this.getInboundBandwidthCounter.bind(this)
 
-    this.serialPort = new SerialPort(comPath, {
+    this.SerialPort = new SerialPort({
       ...rest,
+      path: path,
       autoOpen: false,
       lock: true,
     })
@@ -82,24 +119,24 @@ export class SerialTransport extends Transport {
     this.onAttachmentPortSettings = onAttachmentPortSettings ?? onAttachmentPortSettingsDefault
 
     // Used by hint-validator-binary-handshake
-    this.comPath = comPath
+    this.path = path
 
-    this.serialPort.on('error', this.error)
-    this.serialPort.on('data', this.receiveData)
-    this.serialPort.on('close', this.close)
+    this.SerialPort.on('error', this.error)
+    this.SerialPort.on('data', this.receiveData)
+    this.SerialPort.on('close', this.close)
   }
 
   error(err: Error) {
-    dTransport('SerialPort reporting error with error', err, 'on', this.comPath)
+    dTransport('SerialPort reporting error with error', err, 'on', this.path)
     this.onError(err)
   }
 
   close(err: Error) {
     if (err) {
-      dTransport('SerialPort reporting close with error', err, 'on', this.comPath)
+      dTransport('SerialPort reporting close with error', err, 'on', this.path)
       this.onError(err)
     } else {
-      dTransport('SerialPort reporting close without error on ', this.comPath)
+      dTransport('SerialPort reporting close without error on ', this.path)
     }
     this.onClose(err)
   }
@@ -108,8 +145,8 @@ export class SerialTransport extends Transport {
     dTransport(
       'received raw serial data',
       chunk,
-      this.serialPort.isOpen ? 'isOpen' : '!isOpen',
-      this.serialPort.isPaused() ? 'isPaused' : '!isPaused',
+      this.SerialPort.isOpen ? 'isOpen' : '!isOpen',
+      this.SerialPort.isPaused() ? 'isPaused' : '!isPaused',
     )
 
     this.inboundByteCounter += chunk.byteLength
@@ -137,23 +174,23 @@ export class SerialTransport extends Transport {
 
   connect(cancellationToken: CancellationToken) {
     mark(`serial:connect`)
-    dTransport('Connecting to', this.comPath)
+    dTransport('Connecting to', this.path)
     return new Promise<void>((resolve, reject) => {
-      this.serialPort.open((err: Error) => {
+      this.SerialPort.open((err: Error) => {
         measure(`serial:connect`)
-        dTransport('Connected to', this.comPath)
+        dTransport('Connected to', this.path)
         if (err) {
           reject(err)
           return
         }
 
         // Set our port settings immediately
-        this.serialPort.set(this.onAttachmentPortSettings)
+        this.SerialPort.set(this.onAttachmentPortSettings)
 
-        dTransport('Set our settings', this.onAttachmentPortSettings, 'on', this.comPath)
+        dTransport('Set our settings', this.onAttachmentPortSettings, 'on', this.path)
         if (this.attachmentDelay === 0) {
           // syncronously resolve
-          dTransport('Resolving connection on', this.comPath)
+          dTransport('Resolving connection on', this.path)
           resolve()
         } else {
           mark(`serial:connect-attachment-delay`)
@@ -161,7 +198,7 @@ export class SerialTransport extends Transport {
           // Wait a certain period of time before reporting the connection being open
           setTimeout(() => {
             measure(`serial:connect-attachment-delay`)
-            dTransport('Resolving connection on', this.comPath)
+            dTransport('Resolving connection on', this.path)
             resolve()
           }, this.attachmentDelay)
         }
@@ -176,25 +213,25 @@ export class SerialTransport extends Transport {
 
   disconnect() {
     mark(`serial:disconnect`)
-    dTransport('Disconnecting from', this.comPath)
-    if (this.serialPort.isOpen) {
+    dTransport('Disconnecting from', this.path)
+    if (this.SerialPort.isOpen) {
       return new Promise<void>((resolve, reject) => {
-        this.serialPort.close((err: Error) => {
+        this.SerialPort.close((err: Error) => {
           measure(`serial:disconnect`)
           if (err) {
-            dTransport("Couldn't disconnect from ", this.comPath, 'due to', err)
+            dTransport("Couldn't disconnect from ", this.path, 'due to', err)
             reject(err)
             return
           }
 
           this.resetBandwidthCounters()
 
-          dTransport('Disconnected from', this.comPath)
+          dTransport('Disconnected from', this.path)
           resolve()
         })
       })
     }
-    dTransport('Was already disconnected from', this.comPath)
+    dTransport('Was already disconnected from', this.path)
     return Promise.resolve()
   }
 
@@ -202,12 +239,12 @@ export class SerialTransport extends Transport {
     dTransport(
       'writing raw serial data',
       chunk,
-      this.serialPort.isOpen ? 'isOpen' : '!isOpen',
-      this.serialPort.isPaused() ? 'isPaused' : '!isPaused',
+      this.SerialPort.isOpen ? 'isOpen' : '!isOpen',
+      this.SerialPort.isPaused() ? 'isPaused' : '!isPaused',
     )
 
     return new Promise<void>((resolve, reject) => {
-      if (!this.serialPort.isOpen) {
+      if (!this.SerialPort.isOpen) {
         const err = new Error('Cannot write, serialport is closed')
 
         // Increase the stack trace limit
@@ -221,7 +258,7 @@ export class SerialTransport extends Transport {
       cancellationToken.subscribe(reject)
 
       // check if we can continue
-      const canContinue = this.serialPort.write(chunk, (err: Error) => {
+      const canContinue = this.SerialPort.write(chunk, (err: Error) => {
         if (err) {
           reject(err)
           return
@@ -231,13 +268,13 @@ export class SerialTransport extends Transport {
       // if we can't continue, pause the transport until the drain event
       if (!canContinue) {
         this.pause()
-        this.serialPort.once('drain', () => {
+        this.SerialPort.once('drain', () => {
           this.resume()
         })
       }
 
       // don't return this promise until the OS has drained it's buffer
-      this.serialPort.drain((err: Error) => {
+      this.SerialPort.drain((err: Error) => {
         if (err) {
           reject(err)
           return

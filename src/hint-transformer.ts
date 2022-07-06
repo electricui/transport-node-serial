@@ -66,7 +66,7 @@ export class SerialPortUSBHintTransformer extends DiscoveryHintTransformer {
             'after',
             new Date().getTime() - startTime,
             'ms at ',
-            polledHintIdentification.comPath,
+            polledHintIdentification.path,
           )
           // Break out of the _while_ loop, not the for loop
           break poll
