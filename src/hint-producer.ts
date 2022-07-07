@@ -114,7 +114,7 @@ export class SerialPortHintProducer extends DiscoveryHintProducer {
       // Let the UI know we've found the port
       this.foundHint(hint, cancellationToken).catch(err => {
         if (!cancellationToken.caused(err)) {
-          console.warn("Couldn't pass serial polled hint up")
+          console.warn("Couldn't pass serial polled hint up", err)
         }
       })
 
