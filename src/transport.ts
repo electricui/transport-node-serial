@@ -215,7 +215,7 @@ export class SerialTransport extends Transport {
 
         dTransport('Set our settings', this.onAttachmentPortSettings, 'on', this.path)
         if (this.attachmentDelay === 0) {
-          // syncronously resolve
+          // synchronously resolve
           dTransport('Resolving connection on', this.path)
           resolve()
         } else {
